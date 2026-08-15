@@ -1,5 +1,5 @@
 $ kubectl get storageclass
 
 NAME            PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
-gp2             kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  59m
-gp3 (default)   ebs.csi.aws.com         Retain          WaitForFirstConsumer   true                   45m
+gp2             kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  63m
+gp3 (default)   ebs.csi.aws.com         Retain          WaitForFirstConsumer   true                   49m

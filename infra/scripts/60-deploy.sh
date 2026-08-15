@@ -76,6 +76,21 @@ case "${RELEASE_STATUS}" in
     # go back to — remove the partial release and install cleanly.
     warn "a previous install was interrupted (${RELEASE_STATUS}) — removing the partial release"
     helm uninstall "${HELM_RELEASE}" -n "${K8S_NAMESPACE}" --wait --timeout 5m || true
+
+    # The uninstall takes the mongodb Secret with it, so the next install mints
+    # a fresh root password. A StatefulSet's PVC is deliberately NOT deleted by
+    # Helm, and mongo only ever creates its root user on first start against an
+    # empty data directory — so the volume would keep answering with the old
+    # password while every service now presents the new one, and the whole
+    # stack crash-loops on AuthenticationFailed.
+    #
+    # This is only safe in the pending-install branch: that release never
+    # completed, so the volume holds a half-initialised database and nothing
+    # anyone wants. Never do this for pending-upgrade, where the data is real.
+    if kubectl get pvc "data-${HELM_RELEASE}-mongodb-0" -n "${K8S_NAMESPACE}" >/dev/null 2>&1; then
+      warn "removing the database volume from the failed install so mongo re-initialises with the new password"
+      kubectl delete pvc "data-${HELM_RELEASE}-mongodb-0" -n "${K8S_NAMESPACE}" --ignore-not-found >/dev/null 2>&1 || true
+    fi
     ok "stale release cleared"
     ;;
   pending-upgrade|pending-rollback)
