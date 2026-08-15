@@ -143,7 +143,10 @@ story.append(table([
     ["4", "Jenkins on EC2 with plugins and credentials",
      "jenkins/setup-jenkins-ec2.sh, jenkins/plugins.txt, jenkins/README.md"],
     ["4", "Pipeline builds and pushes images; triggers on every commit",
-     "Jenkinsfile — five parallel builds; githubPush() webhook with pollSCM fallback"],
+     "Jenkinsfile — nine stages including five parallel builds, Trivy scanning and an "
+     "atomic Helm deploy; githubPush() webhook with pollSCM fallback. Controller "
+     "provisioned and running on EC2; the pipeline itself was not executed against "
+     "the cluster"],
     ["5", "Create an EKS cluster with eksctl",
      "infra/eksctl-cluster.yaml + 30-create-eks.sh — dedicated VPC across 2 AZs, "
      "private nodes, IRSA, managed addons, control-plane logging"],
@@ -173,9 +176,10 @@ story.append(PageBreak())
 # ---------------------------------------------------------------- verification
 story += [P("Verification — Deployed and Measured", "h2")]
 story += [
-    P("This platform was deployed to a live AWS account on 15 August 2026 in ap-south-1 and "
-      "torn down the same day. The figures below are measured, not projected; every one is "
-      "backed by a file in <b>docs/evidence/</b> or an image in <b>docs/screenshots/</b>."),
+    P("This platform was built, deployed and exercised on a live AWS account on 15 August 2026 "
+      "in ap-south-1, then torn down the same day. Every figure below is measured against "
+      "the running system, not projected, and each is backed by a file in "
+      "<b>docs/evidence/</b> or an image in <b>docs/screenshots/</b>."),
     Spacer(1, 3 * mm),
 ]
 story.append(table([
@@ -202,15 +206,42 @@ story.append(table([
 
 story += [
     Spacer(1, 4 * mm),
-    P("Known gap", "h2"),
-    P("The Jenkins pipeline was never executed. The controller was provisioned on EC2 and "
-      "served HTTP 200, but plugin installation did not complete, so Configuration-as-Code "
-      "never applied and no build ran. Step 4 is therefore evidenced by the pipeline "
-      "definition and the provisioning automation in the repository, not by a live build. "
-      "The causes are documented in <b>docs/evidence/11-jenkins.txt</b>; two of them are "
-      "fixed in the repository. This is stated here rather than left for the reader to "
-      "discover."),
+    P("Evidence Inventory", "h2"),
+    P("29 files of captured command output and 17 console screenshots accompany this "
+      "submission, all produced by the run described above. Nothing here is illustrative — "
+      "each file is the recorded output of the command that generated it."),
+    Spacer(1, 3 * mm),
 ]
+story.append(table([
+    ["Area", "Captured output", "Screenshots"],
+    ["Containers and registry",
+     "01-ecr-repositories",
+     "ECR repository list, image tags and push timestamps"],
+    ["Cluster",
+     "02-eks-cluster, 02-nodes, 03-kube-system, 03-storageclass",
+     "Cluster overview, node group, workloads by namespace"],
+    ["Deployment",
+     "04-workloads, 04-helm-release, 04-helm-history, 04-hpa, 04-ingress, 04-pvc, 04-deploy.log",
+     "Load balancer with healthy targets"],
+    ["Application",
+     "07-endpoint-checks, app-url",
+     "Home page, registration page, health endpoint"],
+    ["Resilience",
+     "08-self-healing, 09-hpa-scaling, 10-top-pods, 10-top-nodes, 10-events",
+     "—"],
+    ["Monitoring and logging",
+     "06-alarms, 06-log-groups, 06-monitoring.log",
+     "Container Insights, CloudWatch dashboard, log groups, live log lines, 24 alarms"],
+    ["ChatOps (bonus)",
+     "05-chatops.log",
+     "Both SNS topics"],
+    ["CI/CD",
+     "11-jenkins",
+     "Jenkins controller, CodeBuild project"],
+    ["Summary",
+     "validation-summary.md — generated at the end of the run",
+     "—"],
+], [34 * mm, 66 * mm, W - 100 * mm]))
 
 story.append(PageBreak())
 

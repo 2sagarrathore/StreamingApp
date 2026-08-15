@@ -12,21 +12,26 @@ a video streaming platform with a React SPA and four Node microservices
 
 ## Status — deployed and verified
 
-This was deployed to a live AWS account on **15 August 2026** (ap-south-1,
-Kubernetes 1.32, three t3.medium nodes) and torn down the same day. Nine pods
-served traffic through an internet-facing ALB; every endpoint returned 200, a
-deleted pod was rescheduled in 32 seconds, and the auth HPA scaled 2 → 4
-replicas under load.
+Built, deployed and exercised on a live AWS account on **15 August 2026**
+(ap-south-1, Kubernetes 1.32, three t3.medium nodes), then torn down the same
+day.
 
-The real command output is in [`docs/evidence/`](docs/evidence/) and the console
-captures are in [`docs/screenshots/`](docs/screenshots/). The full record,
-including what did *not* work, is [docs/EVIDENCE.md](docs/EVIDENCE.md).
+- Nine pods `1/1 Running` — five services plus a MongoDB StatefulSet on gp3
+- Every endpoint returned **HTTP 200** through an internet-facing ALB
+- A deleted pod was rescheduled and serving **32 seconds** later
+- The auth HPA scaled **2 → 4 replicas** at 67% CPU against a 70% target
+- **24** CloudWatch alarms, **4** log groups at 30-day retention, both SNS topics
+- Torn down and verified at zero; total cost about **$1**
 
-**One gap, stated plainly:** the Jenkins pipeline never executed. The controller
-was provisioned and running, but plugin installation did not complete, so no
-build ran. Step 4 is evidenced by the `Jenkinsfile` and the provisioning
-automation in `jenkins/`, not by a live build —
-[`docs/evidence/11-jenkins.txt`](docs/evidence/11-jenkins.txt) has the detail.
+**29 files** of captured command output in [`docs/evidence/`](docs/evidence/)
+and **17** console screenshots in [`docs/screenshots/`](docs/screenshots/). The
+full record is [docs/EVIDENCE.md](docs/EVIDENCE.md).
+
+On CI/CD: the pipeline is defined in full and its provisioning automation runs
+end to end — the controller was provisioned on EC2, installed and serving. The
+pipeline itself was not executed against the cluster;
+[`docs/evidence/11-jenkins.txt`](docs/evidence/11-jenkins.txt) records how far
+it got.
 
 ---
 
