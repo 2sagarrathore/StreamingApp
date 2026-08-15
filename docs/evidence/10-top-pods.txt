@@ -1,0 +1,14 @@
+$ kubectl top pods -n streamingapp
+
+NAME                                      CPU(cores)   MEMORY(bytes)   
+streamingapp-admin-56595b7c75-vl8h2       2m           40Mi            
+streamingapp-auth-5bc74bb87f-chmvp        52m          71Mi            
+streamingapp-auth-5bc74bb87f-l8qtl        62m          70Mi            
+streamingapp-auth-5bc74bb87f-nrdpn        54m          71Mi            
+streamingapp-auth-5bc74bb87f-nswrg        67m          70Mi            
+streamingapp-chat-777dcc6f6b-m4gm8        2m           34Mi            
+streamingapp-frontend-76dcd48797-sb6s7    1m           3Mi             
+streamingapp-frontend-76dcd48797-xv92g    1m           3Mi             
+streamingapp-mongodb-0                    94m          172Mi           
+streamingapp-streaming-67f856cc87-5srtf   3m           37Mi            
+streamingapp-streaming-67f856cc87-gj7vg   2m           37Mi            

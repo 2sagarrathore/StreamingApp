@@ -25,3 +25,12 @@ streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory
 streamingapp-streaming   Deployment/streamingapp-streaming   cpu: 0%/65%, memory: 19%/80%    2         10        2          7m3s
 auth pod count: 4
 
+# HPA after 4 minute(s) of load
+NAME                     REFERENCE                           TARGETS                         MINPODS   MAXPODS   REPLICAS   AGE
+streamingapp-auth        Deployment/streamingapp-auth        cpu: 63%/70%, memory: 55%/80%   2         8         4          8m5s
+streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory: 4%/80%     2         6         2          8m5s
+streamingapp-streaming   Deployment/streamingapp-streaming   cpu: 0%/65%, memory: 19%/80%    2         10        2          8m5s
+auth pod count: 4
+
+# Load generator stopped. The HPA scales back down after its
+# 300-second stabilisation window.

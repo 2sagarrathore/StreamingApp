@@ -30,7 +30,9 @@ require_account
 INSTANCE_NAME="${PROJECT}-jenkins"
 SG_NAME="${PROJECT}-jenkins-sg"
 INSTANCE_TYPE="${JENKINS_INSTANCE_TYPE:-t3.medium}"
-IAM_PROFILE="${PROJECT}-jenkins"
+# Must match ROLE_NAME in infra/scripts/50-jenkins-iam.sh, which creates both
+# the role and the instance profile under that same name.
+IAM_PROFILE="${PROJECT}-jenkins-role"
 REPO_URL="${JENKINS_REPO_URL:-https://github.com/2sagarrathore/StreamingApp.git}"
 ADMIN_USER="${JENKINS_ADMIN_USER:-admin}"
 
@@ -97,7 +99,7 @@ SG_ID="$(aws ec2 describe-security-groups --region "${AWS_REGION}" \
 if [[ -z "${SG_ID}" ]]; then
   SG_ID="$(aws ec2 create-security-group --region "${AWS_REGION}" \
     --group-name "${SG_NAME}" --vpc-id "${VPC_ID}" \
-    --description "Jenkins controller for ${PROJECT} — web UI restricted to the provisioning IP" \
+    --description "Jenkins controller for ${PROJECT}: web UI restricted to the provisioning IP" \
     --query 'GroupId' --output text)"
   ok "security group ${SG_ID} created"
 fi

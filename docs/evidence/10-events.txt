@@ -1,0 +1,357 @@
+$ kubectl get events -n streamingapp --sort-by=.lastTimestamp
+
+LAST SEEN   TYPE      REASON                         OBJECT                                                MESSAGE
+55m         Normal    Started                        pod/streamingapp-admin-54dfb86b8d-fzv6h               Started container admin
+55m         Normal    Created                        pod/streamingapp-admin-54dfb86b8d-fzv6h               Created container: admin
+20m         Warning   BackOff                        pod/streamingapp-admin-54dfb86b8d-fzv6h               Back-off restarting failed container admin in pod streamingapp-admin-54dfb86b8d-fzv6h_streamingapp(1c2b5f5d-86f2-4cd8-9453-53ebab4d62b6)
+19m         Normal    Pulled                         pod/streamingapp-admin-54dfb86b8d-fzv6h               Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/admin-service:build-20260815075746" already present on machine
+16m         Normal    Killing                        pod/streamingapp-frontend-86d567d967-bl9l2            Stopping container frontend
+16m         Normal    Killing                        pod/streamingapp-frontend-86d567d967-2mjjs            Stopping container frontend
+16m         Normal    Killing                        pod/streamingapp-chat-644f4677c6-lvkjc                Stopping container chat
+16m         Normal    Killing                        pod/streamingapp-mongodb-0                            Stopping container mongodb
+16m         Warning   BackendNotFound                targetgroupbinding/k8s-streamin-streamin-f4a51ec808   backend not found: Service "streamingapp-frontend" not found
+16m         Normal    Killing                        pod/streamingapp-streaming-6957cc685-2dmph            Stopping container streaming
+16m         Normal    Killing                        pod/streamingapp-auth-78d6c7cbb5-488z7                Stopping container auth
+16m         Normal    Killing                        pod/streamingapp-auth-78d6c7cbb5-5q2ks                Stopping container auth
+16m         Normal    Killing                        pod/streamingapp-streaming-6957cc685-htjrj            Stopping container streaming
+16m         Normal    SuccessfullyReconciled         targetgroupbinding/k8s-streamin-streamin-f4a51ec808   Successfully reconciled
+15m         Normal    NoPods                         poddisruptionbudget/streamingapp-streaming            No matching pods found
+15m         Normal    NoPods                         poddisruptionbudget/streamingapp-auth                 No matching pods found
+15m         Normal    NoPods                         poddisruptionbudget/streamingapp-frontend             No matching pods found
+15m         Normal    SuccessfulCreate               replicaset/streamingapp-admin-69db4448fd              Created pod: streamingapp-admin-69db4448fd-8w6pf
+15m         Normal    Created                        pod/streamingapp-admin-69db4448fd-8w6pf               Created container: wait-for-mongo
+15m         Normal    Created                        pod/streamingapp-streaming-c8c7f5875-sn777            Created container: wait-for-mongo
+15m         Normal    Scheduled                      pod/streamingapp-frontend-6dd9f44db9-kgkqp            Successfully assigned streamingapp/streamingapp-frontend-6dd9f44db9-kgkqp to ip-10-42-168-168.ap-south-1.compute.internal
+15m         Normal    ScalingReplicaSet              deployment/streamingapp-auth                          Scaled up replica set streamingapp-auth-69cd859dff from 0 to 1
+15m         Normal    SuccessfulCreate               statefulset/streamingapp-mongodb                      create Pod streamingapp-mongodb-0 in StatefulSet streamingapp-mongodb successful
+15m         Normal    ScalingReplicaSet              deployment/streamingapp-streaming                     Scaled up replica set streamingapp-streaming-c8c7f5875 from 0 to 1
+15m         Normal    Pulled                         pod/streamingapp-frontend-6dd9f44db9-kgkqp            Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend:build-20260815075746" already present on machine
+15m         Normal    Pulled                         pod/streamingapp-streaming-c8c7f5875-sn777            Container image "busybox:1.36" already present on machine
+15m         Normal    SuccessfulCreate               replicaset/streamingapp-streaming-c8c7f5875           Created pod: streamingapp-streaming-c8c7f5875-sn777
+15m         Normal    Scheduled                      pod/streamingapp-streaming-c8c7f5875-sn777            Successfully assigned streamingapp/streamingapp-streaming-c8c7f5875-sn777 to ip-10-42-134-198.ap-south-1.compute.internal
+15m         Normal    Scheduled                      pod/streamingapp-admin-69db4448fd-8w6pf               Successfully assigned streamingapp/streamingapp-admin-69db4448fd-8w6pf to ip-10-42-105-109.ap-south-1.compute.internal
+15m         Normal    Pulled                         pod/streamingapp-admin-69db4448fd-8w6pf               Container image "busybox:1.36" already present on machine
+15m         Normal    Scheduled                      pod/streamingapp-auth-69cd859dff-hxl29                Successfully assigned streamingapp/streamingapp-auth-69cd859dff-hxl29 to ip-10-42-105-109.ap-south-1.compute.internal
+15m         Normal    SuccessfulCreate               replicaset/streamingapp-frontend-6dd9f44db9           Created pod: streamingapp-frontend-6dd9f44db9-kgkqp
+15m         Normal    ScalingReplicaSet              deployment/streamingapp-admin                         Scaled up replica set streamingapp-admin-69db4448fd from 0 to 1
+15m         Normal    SuccessfulCreate               replicaset/streamingapp-chat-695db95ff8               Created pod: streamingapp-chat-695db95ff8-sbjzx
+15m         Normal    Scheduled                      pod/streamingapp-mongodb-0                            Successfully assigned streamingapp/streamingapp-mongodb-0 to ip-10-42-168-168.ap-south-1.compute.internal
+15m         Normal    Created                        pod/streamingapp-frontend-6dd9f44db9-kgkqp            Created container: frontend
+15m         Normal    SuccessfulCreate               replicaset/streamingapp-auth-69cd859dff               Created pod: streamingapp-auth-69cd859dff-hxl29
+15m         Normal    Scheduled                      pod/streamingapp-chat-695db95ff8-sbjzx                Successfully assigned streamingapp/streamingapp-chat-695db95ff8-sbjzx to ip-10-42-168-168.ap-south-1.compute.internal
+15m         Normal    Created                        pod/streamingapp-chat-695db95ff8-sbjzx                Created container: wait-for-mongo
+15m         Normal    Pulled                         pod/streamingapp-chat-695db95ff8-sbjzx                Container image "busybox:1.36" already present on machine
+15m         Normal    ScalingReplicaSet              deployment/streamingapp-frontend                      Scaled up replica set streamingapp-frontend-6dd9f44db9 from 0 to 1
+15m         Normal    ScalingReplicaSet              deployment/streamingapp-chat                          Scaled up replica set streamingapp-chat-695db95ff8 from 0 to 1
+15m         Normal    Started                        pod/streamingapp-frontend-6dd9f44db9-kgkqp            Started container frontend
+15m         Normal    Pulled                         pod/streamingapp-auth-69cd859dff-hxl29                Container image "busybox:1.36" already present on machine
+15m         Normal    Created                        pod/streamingapp-auth-69cd859dff-hxl29                Created container: wait-for-mongo
+15m         Normal    Started                        pod/streamingapp-streaming-c8c7f5875-sn777            Started container wait-for-mongo
+15m         Normal    Started                        pod/streamingapp-chat-695db95ff8-sbjzx                Started container wait-for-mongo
+15m         Normal    Started                        pod/streamingapp-admin-69db4448fd-8w6pf               Started container wait-for-mongo
+15m         Normal    Started                        pod/streamingapp-auth-69cd859dff-hxl29                Started container wait-for-mongo
+15m         Normal    SuccessfulAttachVolume         pod/streamingapp-mongodb-0                            AttachVolume.Attach succeeded for volume "pvc-1800a086-a24a-485e-a052-8d42fce44d03"
+15m         Normal    Pulled                         pod/streamingapp-mongodb-0                            Container image "mongo:6.0" already present on machine
+15m         Normal    SuccessfullyReconciled         ingress/streamingapp                                  Successfully reconciled
+15m         Normal    Created                        pod/streamingapp-mongodb-0                            Created container: mongodb
+15m         Normal    Started                        pod/streamingapp-mongodb-0                            Started container mongodb
+14m         Normal    Scheduled                      pod/streamingapp-streaming-c8c7f5875-xjxjm            Successfully assigned streamingapp/streamingapp-streaming-c8c7f5875-xjxjm to ip-10-42-105-109.ap-south-1.compute.internal
+14m         Normal    ScalingReplicaSet              deployment/streamingapp-streaming                     Scaled up replica set streamingapp-streaming-c8c7f5875 from 1 to 2
+14m         Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-streaming        New size: 2; reason: Current number of replicas below Spec.MinReplicas
+14m         Normal    Created                        pod/streamingapp-auth-69cd859dff-5v7qk                Created container: wait-for-mongo
+14m         Normal    ScalingReplicaSet              deployment/streamingapp-auth                          Scaled up replica set streamingapp-auth-69cd859dff from 1 to 2
+14m         Normal    SuccessfulCreate               replicaset/streamingapp-frontend-6dd9f44db9           Created pod: streamingapp-frontend-6dd9f44db9-jgt84
+14m         Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-auth             New size: 2; reason: Current number of replicas below Spec.MinReplicas
+14m         Normal    Created                        pod/streamingapp-streaming-c8c7f5875-xjxjm            Created container: wait-for-mongo
+14m         Normal    Scheduled                      pod/streamingapp-frontend-6dd9f44db9-jgt84            Successfully assigned streamingapp/streamingapp-frontend-6dd9f44db9-jgt84 to ip-10-42-134-198.ap-south-1.compute.internal
+14m         Normal    Pulled                         pod/streamingapp-auth-69cd859dff-5v7qk                Container image "busybox:1.36" already present on machine
+14m         Normal    Scheduled                      pod/streamingapp-auth-69cd859dff-5v7qk                Successfully assigned streamingapp/streamingapp-auth-69cd859dff-5v7qk to ip-10-42-134-198.ap-south-1.compute.internal
+14m         Normal    Pulled                         pod/streamingapp-streaming-c8c7f5875-xjxjm            Container image "busybox:1.36" already present on machine
+14m         Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-frontend         New size: 2; reason: Current number of replicas below Spec.MinReplicas
+14m         Normal    SuccessfulCreate               replicaset/streamingapp-auth-69cd859dff               Created pod: streamingapp-auth-69cd859dff-5v7qk
+14m         Normal    Created                        pod/streamingapp-frontend-6dd9f44db9-jgt84            Created container: frontend
+14m         Normal    Pulled                         pod/streamingapp-frontend-6dd9f44db9-jgt84            Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend:build-20260815075746" already present on machine
+14m         Normal    SuccessfulCreate               replicaset/streamingapp-streaming-c8c7f5875           Created pod: streamingapp-streaming-c8c7f5875-xjxjm
+14m         Normal    ScalingReplicaSet              deployment/streamingapp-frontend                      Scaled up replica set streamingapp-frontend-6dd9f44db9 from 1 to 2
+14m         Normal    Started                        pod/streamingapp-frontend-6dd9f44db9-jgt84            Started container frontend
+14m         Normal    Started                        pod/streamingapp-streaming-c8c7f5875-xjxjm            Started container wait-for-mongo
+14m         Normal    Started                        pod/streamingapp-auth-69cd859dff-5v7qk                Started container wait-for-mongo
+14m         Normal    Pulled                         pod/streamingapp-streaming-c8c7f5875-sn777            Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service:build-20260815075746" already present on machine
+14m         Normal    Created                        pod/streamingapp-streaming-c8c7f5875-sn777            Created container: streaming
+14m         Normal    Started                        pod/streamingapp-streaming-c8c7f5875-sn777            Started container streaming
+14m         Normal    Created                        pod/streamingapp-auth-69cd859dff-hxl29                Created container: auth
+14m         Normal    Pulled                         pod/streamingapp-auth-69cd859dff-hxl29                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+14m         Normal    Pulling                        pod/streamingapp-admin-69db4448fd-8w6pf               Pulling image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/admin-service:build-20260815075746"
+14m         Normal    Pulling                        pod/streamingapp-auth-69cd859dff-5v7qk                Pulling image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746"
+14m         Normal    Pulled                         pod/streamingapp-streaming-c8c7f5875-xjxjm            Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service:build-20260815075746" already present on machine
+14m         Normal    Created                        pod/streamingapp-streaming-c8c7f5875-xjxjm            Created container: streaming
+14m         Normal    Pulling                        pod/streamingapp-chat-695db95ff8-sbjzx                Pulling image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/chat-service:build-20260815075746"
+14m         Normal    Started                        pod/streamingapp-auth-69cd859dff-hxl29                Started container auth
+14m         Normal    Started                        pod/streamingapp-streaming-c8c7f5875-xjxjm            Started container streaming
+14m         Normal    Created                        pod/streamingapp-auth-69cd859dff-5v7qk                Created container: auth
+14m         Normal    Started                        pod/streamingapp-auth-69cd859dff-5v7qk                Started container auth
+14m         Normal    Pulled                         pod/streamingapp-chat-695db95ff8-sbjzx                Successfully pulled image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/chat-service:build-20260815075746" in 957ms (957ms including waiting). Image size: 51631470 bytes.
+14m         Normal    Started                        pod/streamingapp-chat-695db95ff8-sbjzx                Started container chat
+14m         Normal    Created                        pod/streamingapp-chat-695db95ff8-sbjzx                Created container: chat
+14m         Normal    Pulled                         pod/streamingapp-auth-69cd859dff-5v7qk                Successfully pulled image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" in 1.165s (1.165s including waiting). Image size: 52261092 bytes.
+14m         Normal    Pulled                         pod/streamingapp-admin-69db4448fd-8w6pf               Successfully pulled image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/admin-service:build-20260815075746" in 2.416s (2.417s including waiting). Image size: 52515230 bytes.
+14m         Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-auth             invalid metrics (2 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+14m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-streaming        failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+14m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+14m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API
+14m         Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-auth             invalid metrics (1 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+14m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+13m         Normal    Pulled                         pod/streamingapp-admin-69db4448fd-8w6pf               Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/admin-service:build-20260815075746" already present on machine
+13m         Normal    Created                        pod/streamingapp-admin-69db4448fd-8w6pf               Created container: admin
+13m         Normal    Started                        pod/streamingapp-admin-69db4448fd-8w6pf               Started container admin
+13m         Warning   BackOff                        pod/streamingapp-admin-69db4448fd-8w6pf               Back-off restarting failed container admin in pod streamingapp-admin-69db4448fd-8w6pf_streamingapp(c1669930-aa59-4d9e-bb4c-747abe6dc520)
+13m         Normal    SuccessfullyReconciled         targetgroupbinding/k8s-streamin-streamin-036638f7f9   Successfully reconciled
+13m         Warning   BackendNotFound                targetgroupbinding/k8s-streamin-streamin-036638f7f9   backend not found: Service "streamingapp-frontend" not found
+13m         Normal    Killing                        pod/streamingapp-frontend-6dd9f44db9-kgkqp            Stopping container frontend
+13m         Normal    Killing                        pod/streamingapp-auth-69cd859dff-5v7qk                Stopping container auth
+13m         Normal    Killing                        pod/streamingapp-frontend-6dd9f44db9-jgt84            Stopping container frontend
+13m         Normal    Killing                        pod/streamingapp-auth-69cd859dff-hxl29                Stopping container auth
+13m         Warning   Unhealthy                      pod/streamingapp-mongodb-0                            Readiness probe failed:
+13m         Normal    Killing                        pod/streamingapp-mongodb-0                            Stopping container mongodb
+13m         Normal    Killing                        pod/streamingapp-chat-695db95ff8-sbjzx                Stopping container chat
+13m         Normal    Killing                        pod/streamingapp-streaming-c8c7f5875-sn777            Stopping container streaming
+13m         Normal    Killing                        pod/streamingapp-streaming-c8c7f5875-xjxjm            Stopping container streaming
+12m         Normal    Scheduled                      pod/streamingapp-chat-67864db5c4-v4d9x                Successfully assigned streamingapp/streamingapp-chat-67864db5c4-v4d9x to ip-10-42-168-168.ap-south-1.compute.internal
+12m         Normal    SuccessfulCreate               statefulset/streamingapp-mongodb                      create Pod streamingapp-mongodb-0 in StatefulSet streamingapp-mongodb successful
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-auth-68d7c9d98c               Created pod: streamingapp-auth-68d7c9d98c-hx74w
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-streaming                     Scaled up replica set streamingapp-streaming-5b546d5667 from 0 to 1
+12m         Normal    NoPods                         poddisruptionbudget/streamingapp-streaming            No matching pods found
+12m         Normal    Scheduled                      pod/streamingapp-admin-b48b87bc-l92n5                 Successfully assigned streamingapp/streamingapp-admin-b48b87bc-l92n5 to ip-10-42-105-109.ap-south-1.compute.internal
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-frontend-64b95c79f7           Created pod: streamingapp-frontend-64b95c79f7-ph8ln
+12m         Normal    Scheduled                      pod/streamingapp-frontend-64b95c79f7-ph8ln            Successfully assigned streamingapp/streamingapp-frontend-64b95c79f7-ph8ln to ip-10-42-105-109.ap-south-1.compute.internal
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-chat                          Scaled up replica set streamingapp-chat-67864db5c4 from 0 to 1
+12m         Normal    NoPods                         poddisruptionbudget/streamingapp-frontend             No matching pods found
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-frontend                      Scaled up replica set streamingapp-frontend-64b95c79f7 from 0 to 1
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-admin-b48b87bc                Created pod: streamingapp-admin-b48b87bc-l92n5
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-admin                         Scaled up replica set streamingapp-admin-b48b87bc from 0 to 1
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-streaming-5b546d5667          Created pod: streamingapp-streaming-5b546d5667-k7wjh
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-chat-67864db5c4               Created pod: streamingapp-chat-67864db5c4-v4d9x
+12m         Normal    Scheduled                      pod/streamingapp-streaming-5b546d5667-k7wjh           Successfully assigned streamingapp/streamingapp-streaming-5b546d5667-k7wjh to ip-10-42-134-198.ap-south-1.compute.internal
+12m         Normal    Scheduled                      pod/streamingapp-mongodb-0                            Successfully assigned streamingapp/streamingapp-mongodb-0 to ip-10-42-168-168.ap-south-1.compute.internal
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-auth                          Scaled up replica set streamingapp-auth-68d7c9d98c from 0 to 1
+12m         Normal    NoPods                         poddisruptionbudget/streamingapp-auth                 No matching pods found
+12m         Normal    Scheduled                      pod/streamingapp-auth-68d7c9d98c-hx74w                Successfully assigned streamingapp/streamingapp-auth-68d7c9d98c-hx74w to ip-10-42-168-168.ap-south-1.compute.internal
+12m         Normal    Created                        pod/streamingapp-admin-b48b87bc-l92n5                 Created container: wait-for-mongo
+12m         Normal    Pulled                         pod/streamingapp-admin-b48b87bc-l92n5                 Container image "busybox:1.36" already present on machine
+12m         Normal    Pulling                        pod/streamingapp-frontend-64b95c79f7-ph8ln            Pulling image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend:build-20260815075746"
+12m         Normal    Pulled                         pod/streamingapp-streaming-5b546d5667-k7wjh           Container image "busybox:1.36" already present on machine
+12m         Warning   FailedMount                    pod/streamingapp-chat-67864db5c4-v4d9x                MountVolume.SetUp failed for volume "kube-api-access-9bbkw" : failed to sync configmap cache: timed out waiting for the condition
+12m         Normal    Created                        pod/streamingapp-streaming-5b546d5667-k7wjh           Created container: wait-for-mongo
+12m         Normal    Started                        pod/streamingapp-streaming-5b546d5667-k7wjh           Started container wait-for-mongo
+12m         Warning   FailedMount                    pod/streamingapp-auth-68d7c9d98c-hx74w                MountVolume.SetUp failed for volume "kube-api-access-r5grd" : failed to sync configmap cache: timed out waiting for the condition
+12m         Normal    Created                        pod/streamingapp-frontend-64b95c79f7-ph8ln            Created container: frontend
+12m         Normal    Started                        pod/streamingapp-admin-b48b87bc-l92n5                 Started container wait-for-mongo
+12m         Normal    Pulled                         pod/streamingapp-frontend-64b95c79f7-ph8ln            Successfully pulled image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend:build-20260815075746" in 1.251s (1.251s including waiting). Image size: 21476392 bytes.
+12m         Normal    Started                        pod/streamingapp-frontend-64b95c79f7-ph8ln            Started container frontend
+12m         Normal    Pulled                         pod/streamingapp-chat-67864db5c4-v4d9x                Container image "busybox:1.36" already present on machine
+12m         Warning   FailedMount                    pod/streamingapp-mongodb-0                            MountVolume.SetUp failed for volume "kube-api-access-b8hvf" : failed to sync configmap cache: timed out waiting for the condition
+12m         Normal    Created                        pod/streamingapp-chat-67864db5c4-v4d9x                Created container: wait-for-mongo
+12m         Normal    Created                        pod/streamingapp-auth-68d7c9d98c-hx74w                Created container: wait-for-mongo
+12m         Normal    Started                        pod/streamingapp-chat-67864db5c4-v4d9x                Started container wait-for-mongo
+12m         Normal    SuccessfullyReconciled         ingress/streamingapp                                  Successfully reconciled
+12m         Normal    Pulled                         pod/streamingapp-auth-68d7c9d98c-hx74w                Container image "busybox:1.36" already present on machine
+12m         Normal    Started                        pod/streamingapp-auth-68d7c9d98c-hx74w                Started container wait-for-mongo
+12m         Normal    SuccessfulAttachVolume         pod/streamingapp-mongodb-0                            AttachVolume.Attach succeeded for volume "pvc-1800a086-a24a-485e-a052-8d42fce44d03"
+12m         Normal    Started                        pod/streamingapp-mongodb-0                            Started container mongodb
+12m         Normal    Created                        pod/streamingapp-mongodb-0                            Created container: mongodb
+12m         Normal    Pulled                         pod/streamingapp-mongodb-0                            Container image "mongo:6.0" already present on machine
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-frontend                      Scaled up replica set streamingapp-frontend-64b95c79f7 from 1 to 2
+12m         Normal    Scheduled                      pod/streamingapp-frontend-64b95c79f7-f2h5h            Successfully assigned streamingapp/streamingapp-frontend-64b95c79f7-f2h5h to ip-10-42-134-198.ap-south-1.compute.internal
+12m         Normal    Scheduled                      pod/streamingapp-auth-68d7c9d98c-n8ctd                Successfully assigned streamingapp/streamingapp-auth-68d7c9d98c-n8ctd to ip-10-42-134-198.ap-south-1.compute.internal
+12m         Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-frontend         New size: 2; reason: Current number of replicas below Spec.MinReplicas
+12m         Normal    Scheduled                      pod/streamingapp-streaming-5b546d5667-ckvtk           Successfully assigned streamingapp/streamingapp-streaming-5b546d5667-ckvtk to ip-10-42-105-109.ap-south-1.compute.internal
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-frontend-64b95c79f7           Created pod: streamingapp-frontend-64b95c79f7-f2h5h
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-auth-68d7c9d98c               Created pod: streamingapp-auth-68d7c9d98c-n8ctd
+12m         Normal    SuccessfulCreate               replicaset/streamingapp-streaming-5b546d5667          Created pod: streamingapp-streaming-5b546d5667-ckvtk
+12m         Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-auth             New size: 2; reason: Current number of replicas below Spec.MinReplicas
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-auth                          Scaled up replica set streamingapp-auth-68d7c9d98c from 1 to 2
+12m         Normal    ScalingReplicaSet              deployment/streamingapp-streaming                     Scaled up replica set streamingapp-streaming-5b546d5667 from 1 to 2
+12m         Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-streaming        New size: 2; reason: Current number of replicas below Spec.MinReplicas
+12m         Normal    Started                        pod/streamingapp-frontend-64b95c79f7-f2h5h            Started container frontend
+12m         Normal    Created                        pod/streamingapp-frontend-64b95c79f7-f2h5h            Created container: frontend
+12m         Normal    Pulled                         pod/streamingapp-frontend-64b95c79f7-f2h5h            Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend:build-20260815075746" already present on machine
+12m         Normal    Started                        pod/streamingapp-streaming-5b546d5667-ckvtk           Started container wait-for-mongo
+12m         Normal    Created                        pod/streamingapp-auth-68d7c9d98c-n8ctd                Created container: wait-for-mongo
+12m         Normal    Pulled                         pod/streamingapp-streaming-5b546d5667-ckvtk           Container image "busybox:1.36" already present on machine
+12m         Normal    Created                        pod/streamingapp-streaming-5b546d5667-ckvtk           Created container: wait-for-mongo
+12m         Normal    Pulled                         pod/streamingapp-auth-68d7c9d98c-n8ctd                Container image "busybox:1.36" already present on machine
+12m         Normal    Started                        pod/streamingapp-auth-68d7c9d98c-n8ctd                Started container wait-for-mongo
+11m         Normal    Started                        pod/streamingapp-chat-67864db5c4-v4d9x                Started container chat
+11m         Normal    Created                        pod/streamingapp-chat-67864db5c4-v4d9x                Created container: chat
+11m         Normal    Pulled                         pod/streamingapp-chat-67864db5c4-v4d9x                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/chat-service:build-20260815075746" already present on machine
+11m         Normal    Started                        pod/streamingapp-streaming-5b546d5667-k7wjh           Started container streaming
+11m         Normal    Created                        pod/streamingapp-admin-b48b87bc-l92n5                 Created container: admin
+11m         Normal    Pulled                         pod/streamingapp-admin-b48b87bc-l92n5                 Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/admin-service:build-20260815075746" already present on machine
+11m         Normal    Started                        pod/streamingapp-admin-b48b87bc-l92n5                 Started container admin
+11m         Normal    Created                        pod/streamingapp-streaming-5b546d5667-k7wjh           Created container: streaming
+11m         Normal    Pulled                         pod/streamingapp-streaming-5b546d5667-k7wjh           Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service:build-20260815075746" already present on machine
+11m         Normal    Started                        pod/streamingapp-auth-68d7c9d98c-hx74w                Started container auth
+11m         Normal    Created                        pod/streamingapp-auth-68d7c9d98c-hx74w                Created container: auth
+11m         Normal    Pulled                         pod/streamingapp-auth-68d7c9d98c-hx74w                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+11m         Normal    Started                        pod/streamingapp-streaming-5b546d5667-ckvtk           Started container streaming
+11m         Normal    Pulled                         pod/streamingapp-streaming-5b546d5667-ckvtk           Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service:build-20260815075746" already present on machine
+11m         Normal    Created                        pod/streamingapp-streaming-5b546d5667-ckvtk           Created container: streaming
+11m         Normal    Started                        pod/streamingapp-auth-68d7c9d98c-n8ctd                Started container auth
+11m         Normal    Pulled                         pod/streamingapp-auth-68d7c9d98c-n8ctd                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+11m         Normal    Created                        pod/streamingapp-auth-68d7c9d98c-n8ctd                Created container: auth
+10m         Warning   BackOff                        pod/streamingapp-chat-67864db5c4-v4d9x                Back-off restarting failed container chat in pod streamingapp-chat-67864db5c4-v4d9x_streamingapp(c65796a3-845f-4a73-9b89-3560d21b1622)
+10m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+10m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-streaming        failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+10m         Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-streaming        invalid metrics (2 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+10m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-streaming        failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API
+10m         Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-auth             invalid metrics (2 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+10m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API
+10m         Warning   BackOff                        pod/streamingapp-admin-b48b87bc-l92n5                 Back-off restarting failed container admin in pod streamingapp-admin-b48b87bc-l92n5_streamingapp(78cbcf25-f6e7-449e-b5f4-b2a3e74b866c)
+10m         Warning   BackOff                        pod/streamingapp-streaming-5b546d5667-k7wjh           Back-off restarting failed container streaming in pod streamingapp-streaming-5b546d5667-k7wjh_streamingapp(9d85932b-00e2-4c27-9a98-88cd741b861e)
+10m         Warning   BackOff                        pod/streamingapp-auth-68d7c9d98c-n8ctd                Back-off restarting failed container auth in pod streamingapp-auth-68d7c9d98c-n8ctd_streamingapp(8e271672-a76d-4d99-a359-28561056a200)
+10m         Warning   BackOff                        pod/streamingapp-streaming-5b546d5667-ckvtk           Back-off restarting failed container streaming in pod streamingapp-streaming-5b546d5667-ckvtk_streamingapp(3a7af619-63d6-45b1-a7fd-75ccbaf2bb9f)
+10m         Warning   BackOff                        pod/streamingapp-auth-68d7c9d98c-hx74w                Back-off restarting failed container auth in pod streamingapp-auth-68d7c9d98c-hx74w_streamingapp(49c889c6-4b9e-4792-8e8b-026ed05f7234)
+10m         Normal    Killing                        pod/streamingapp-frontend-64b95c79f7-f2h5h            Stopping container frontend
+10m         Warning   BackendNotFound                targetgroupbinding/k8s-streamin-streamin-308455dae0   backend not found: Service "streamingapp-frontend" not found
+10m         Normal    SuccessfullyReconciled         targetgroupbinding/k8s-streamin-streamin-308455dae0   Successfully reconciled
+10m         Normal    Killing                        pod/streamingapp-frontend-64b95c79f7-ph8ln            Stopping container frontend
+10m         Normal    Killing                        pod/streamingapp-mongodb-0                            Stopping container mongodb
+9m25s       Normal    SuccessfulCreate               statefulset/streamingapp-mongodb                      create Pod streamingapp-mongodb-0 in StatefulSet streamingapp-mongodb successful
+9m25s       Normal    WaitForFirstConsumer           persistentvolumeclaim/data-streamingapp-mongodb-0     waiting for first consumer to be created before binding
+9m25s       Normal    NoPods                         poddisruptionbudget/streamingapp-streaming            No matching pods found
+9m25s       Normal    ScalingReplicaSet              deployment/streamingapp-streaming                     Scaled up replica set streamingapp-streaming-67f856cc87 from 0 to 1
+9m25s       Normal    Scheduled                      pod/streamingapp-streaming-67f856cc87-gj7vg           Successfully assigned streamingapp/streamingapp-streaming-67f856cc87-gj7vg to ip-10-42-168-168.ap-south-1.compute.internal
+9m25s       Normal    Scheduled                      pod/streamingapp-frontend-76dcd48797-xv92g            Successfully assigned streamingapp/streamingapp-frontend-76dcd48797-xv92g to ip-10-42-168-168.ap-south-1.compute.internal
+9m25s       Normal    SuccessfulCreate               replicaset/streamingapp-streaming-67f856cc87          Created pod: streamingapp-streaming-67f856cc87-gj7vg
+9m25s       Normal    SuccessfulCreate               statefulset/streamingapp-mongodb                      create Claim data-streamingapp-mongodb-0 Pod streamingapp-mongodb-0 in StatefulSet streamingapp-mongodb success
+9m25s       Normal    SuccessfulCreate               replicaset/streamingapp-auth-5bc74bb87f               Created pod: streamingapp-auth-5bc74bb87f-g7tjt
+9m25s       Normal    SuccessfulCreate               replicaset/streamingapp-frontend-76dcd48797           Created pod: streamingapp-frontend-76dcd48797-xv92g
+9m25s       Normal    ExternalProvisioning           persistentvolumeclaim/data-streamingapp-mongodb-0     Waiting for a volume to be created either by the external provisioner 'ebs.csi.aws.com' or manually by the system administrator. If volume creation is delayed, please verify that the provisioner is running and correctly registered.
+9m25s       Normal    ScalingReplicaSet              deployment/streamingapp-chat                          Scaled up replica set streamingapp-chat-777dcc6f6b from 0 to 1
+9m25s       Normal    SuccessfulCreate               replicaset/streamingapp-chat-777dcc6f6b               Created pod: streamingapp-chat-777dcc6f6b-m4gm8
+9m25s       Normal    Scheduled                      pod/streamingapp-admin-56595b7c75-vl8h2               Successfully assigned streamingapp/streamingapp-admin-56595b7c75-vl8h2 to ip-10-42-134-198.ap-south-1.compute.internal
+9m25s       Normal    NoPods                         poddisruptionbudget/streamingapp-auth                 No matching pods found
+9m25s       Normal    ScalingReplicaSet              deployment/streamingapp-auth                          Scaled up replica set streamingapp-auth-5bc74bb87f from 0 to 1
+9m25s       Normal    Scheduled                      pod/streamingapp-auth-5bc74bb87f-g7tjt                Successfully assigned streamingapp/streamingapp-auth-5bc74bb87f-g7tjt to ip-10-42-134-198.ap-south-1.compute.internal
+9m25s       Normal    ScalingReplicaSet              deployment/streamingapp-admin                         Scaled up replica set streamingapp-admin-56595b7c75 from 0 to 1
+9m25s       Normal    SuccessfulCreate               replicaset/streamingapp-admin-56595b7c75              Created pod: streamingapp-admin-56595b7c75-vl8h2
+9m25s       Normal    Scheduled                      pod/streamingapp-chat-777dcc6f6b-m4gm8                Successfully assigned streamingapp/streamingapp-chat-777dcc6f6b-m4gm8 to ip-10-42-105-109.ap-south-1.compute.internal
+9m25s       Normal    Provisioning                   persistentvolumeclaim/data-streamingapp-mongodb-0     External provisioner is provisioning volume for claim "streamingapp/data-streamingapp-mongodb-0"
+9m25s       Normal    NoPods                         poddisruptionbudget/streamingapp-frontend             No matching pods found
+9m25s       Normal    ScalingReplicaSet              deployment/streamingapp-frontend                      Scaled up replica set streamingapp-frontend-76dcd48797 from 0 to 1
+9m24s       Normal    Created                        pod/streamingapp-admin-56595b7c75-vl8h2               Created container: wait-for-mongo
+9m24s       Normal    Pulled                         pod/streamingapp-streaming-67f856cc87-gj7vg           Container image "busybox:1.36" already present on machine
+9m24s       Normal    Started                        pod/streamingapp-frontend-76dcd48797-xv92g            Started container frontend
+9m24s       Normal    Started                        pod/streamingapp-admin-56595b7c75-vl8h2               Started container wait-for-mongo
+9m24s       Normal    Pulled                         pod/streamingapp-chat-777dcc6f6b-m4gm8                Container image "busybox:1.36" already present on machine
+9m24s       Normal    Created                        pod/streamingapp-chat-777dcc6f6b-m4gm8                Created container: wait-for-mongo
+9m24s       Normal    Started                        pod/streamingapp-chat-777dcc6f6b-m4gm8                Started container wait-for-mongo
+9m24s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-g7tjt                Container image "busybox:1.36" already present on machine
+9m24s       Normal    Started                        pod/streamingapp-streaming-67f856cc87-gj7vg           Started container wait-for-mongo
+9m24s       Normal    Created                        pod/streamingapp-streaming-67f856cc87-gj7vg           Created container: wait-for-mongo
+9m24s       Normal    Pulled                         pod/streamingapp-frontend-76dcd48797-xv92g            Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend:build-20260815075746" already present on machine
+9m24s       Normal    Pulled                         pod/streamingapp-admin-56595b7c75-vl8h2               Container image "busybox:1.36" already present on machine
+9m24s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-g7tjt                Started container wait-for-mongo
+9m24s       Normal    Created                        pod/streamingapp-frontend-76dcd48797-xv92g            Created container: frontend
+9m24s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-g7tjt                Created container: wait-for-mongo
+9m22s       Normal    ProvisioningSucceeded          persistentvolumeclaim/data-streamingapp-mongodb-0     Successfully provisioned volume pvc-27700b1f-7ed7-4839-9f28-e27f7d87e78f
+9m22s       Normal    SuccessfullyReconciled         ingress/streamingapp                                  Successfully reconciled
+9m22s       Normal    Scheduled                      pod/streamingapp-mongodb-0                            Successfully assigned streamingapp/streamingapp-mongodb-0 to ip-10-42-105-109.ap-south-1.compute.internal
+9m18s       Normal    SuccessfulAttachVolume         pod/streamingapp-mongodb-0                            AttachVolume.Attach succeeded for volume "pvc-27700b1f-7ed7-4839-9f28-e27f7d87e78f"
+9m12s       Normal    Pulling                        pod/streamingapp-mongodb-0                            Pulling image "mongo:6.0"
+9m10s       Normal    ScalingReplicaSet              deployment/streamingapp-auth                          Scaled up replica set streamingapp-auth-5bc74bb87f from 1 to 2
+9m10s       Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-streaming        New size: 2; reason: Current number of replicas below Spec.MinReplicas
+9m10s       Normal    ScalingReplicaSet              deployment/streamingapp-streaming                     Scaled up replica set streamingapp-streaming-67f856cc87 from 1 to 2
+9m10s       Normal    SuccessfulCreate               replicaset/streamingapp-auth-5bc74bb87f               Created pod: streamingapp-auth-5bc74bb87f-l8qtl
+9m10s       Normal    Scheduled                      pod/streamingapp-auth-5bc74bb87f-l8qtl                Successfully assigned streamingapp/streamingapp-auth-5bc74bb87f-l8qtl to ip-10-42-168-168.ap-south-1.compute.internal
+9m10s       Normal    SuccessfulCreate               replicaset/streamingapp-frontend-76dcd48797           Created pod: streamingapp-frontend-76dcd48797-sb6s7
+9m10s       Normal    Scheduled                      pod/streamingapp-streaming-67f856cc87-5srtf           Successfully assigned streamingapp/streamingapp-streaming-67f856cc87-5srtf to ip-10-42-134-198.ap-south-1.compute.internal
+9m10s       Normal    SuccessfulCreate               replicaset/streamingapp-streaming-67f856cc87          Created pod: streamingapp-streaming-67f856cc87-5srtf
+9m10s       Normal    Scheduled                      pod/streamingapp-frontend-76dcd48797-sb6s7            Successfully assigned streamingapp/streamingapp-frontend-76dcd48797-sb6s7 to ip-10-42-134-198.ap-south-1.compute.internal
+9m10s       Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-auth             New size: 2; reason: Current number of replicas below Spec.MinReplicas
+9m10s       Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-frontend         New size: 2; reason: Current number of replicas below Spec.MinReplicas
+9m10s       Normal    ScalingReplicaSet              deployment/streamingapp-frontend                      Scaled up replica set streamingapp-frontend-76dcd48797 from 1 to 2
+9m9s        Normal    Started                        pod/streamingapp-streaming-67f856cc87-5srtf           Started container wait-for-mongo
+9m9s        Normal    Started                        pod/streamingapp-frontend-76dcd48797-sb6s7            Started container frontend
+9m9s        Normal    Created                        pod/streamingapp-streaming-67f856cc87-5srtf           Created container: wait-for-mongo
+9m9s        Normal    Pulled                         pod/streamingapp-streaming-67f856cc87-5srtf           Container image "busybox:1.36" already present on machine
+9m9s        Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-l8qtl                Container image "busybox:1.36" already present on machine
+9m9s        Normal    Created                        pod/streamingapp-auth-5bc74bb87f-l8qtl                Created container: wait-for-mongo
+9m9s        Normal    Started                        pod/streamingapp-auth-5bc74bb87f-l8qtl                Started container wait-for-mongo
+9m9s        Normal    Created                        pod/streamingapp-frontend-76dcd48797-sb6s7            Created container: frontend
+9m9s        Normal    Pulled                         pod/streamingapp-frontend-76dcd48797-sb6s7            Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend:build-20260815075746" already present on machine
+9m3s        Normal    SuccessfullyReconciled         targetgroupbinding/k8s-streamin-streamin-99deff3a66   Successfully reconciled
+8m59s       Normal    Started                        pod/streamingapp-mongodb-0                            Started container mongodb
+8m59s       Normal    Created                        pod/streamingapp-mongodb-0                            Created container: mongodb
+8m59s       Normal    Pulled                         pod/streamingapp-mongodb-0                            Successfully pulled image "mongo:6.0" in 13.012s (13.012s including waiting). Image size: 278908424 bytes.
+8m55s       Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API
+8m55s       Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-streaming        failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+8m55s       Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-auth             invalid metrics (2 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+8m55s       Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+8m55s       Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-streaming        invalid metrics (2 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+8m55s       Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-streaming        failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API
+8m41s       Normal    Created                        pod/streamingapp-streaming-67f856cc87-5srtf           Created container: streaming
+8m41s       Normal    Created                        pod/streamingapp-chat-777dcc6f6b-m4gm8                Created container: chat
+8m41s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-l8qtl                Created container: auth
+8m41s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-l8qtl                Started container auth
+8m41s       Normal    Pulled                         pod/streamingapp-chat-777dcc6f6b-m4gm8                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/chat-service:build-20260815075746" already present on machine
+8m41s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-g7tjt                Started container auth
+8m41s       Normal    Pulled                         pod/streamingapp-admin-56595b7c75-vl8h2               Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/admin-service:build-20260815075746" already present on machine
+8m41s       Normal    Created                        pod/streamingapp-admin-56595b7c75-vl8h2               Created container: admin
+8m41s       Normal    Pulled                         pod/streamingapp-streaming-67f856cc87-5srtf           Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service:build-20260815075746" already present on machine
+8m41s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-g7tjt                Created container: auth
+8m41s       Normal    Started                        pod/streamingapp-streaming-67f856cc87-5srtf           Started container streaming
+8m41s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-l8qtl                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+8m41s       Normal    Started                        pod/streamingapp-admin-56595b7c75-vl8h2               Started container admin
+8m41s       Normal    Started                        pod/streamingapp-chat-777dcc6f6b-m4gm8                Started container chat
+8m41s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-g7tjt                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+8m41s       Normal    Pulling                        pod/streamingapp-streaming-67f856cc87-gj7vg           Pulling image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service:build-20260815075746"
+8m39s       Normal    Pulled                         pod/streamingapp-streaming-67f856cc87-gj7vg           Successfully pulled image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service:build-20260815075746" in 2.131s (2.131s including waiting). Image size: 67757318 bytes.
+8m39s       Normal    Created                        pod/streamingapp-streaming-67f856cc87-gj7vg           Created container: streaming
+8m39s       Normal    Started                        pod/streamingapp-streaming-67f856cc87-gj7vg           Started container streaming
+8m25s       Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-streaming        invalid metrics (1 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+8m25s       Normal    Scheduled                      pod/streamingapp-smoke-test                           Successfully assigned streamingapp/streamingapp-smoke-test to ip-10-42-168-168.ap-south-1.compute.internal
+8m25s       Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-streaming        failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+8m25s       Warning   FailedGetResourceMetric        horizontalpodautoscaler/streamingapp-auth             failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+8m25s       Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/streamingapp-auth             invalid metrics (1 invalid out of 2), first error is: failed to get cpu resource metric value: failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+8m24s       Normal    Pulling                        pod/streamingapp-smoke-test                           Pulling image "curlimages/curl:8.10.1"
+8m20s       Normal    Pulled                         pod/streamingapp-smoke-test                           Successfully pulled image "curlimages/curl:8.10.1" in 3.856s (3.856s including waiting). Image size: 9414401 bytes.
+8m20s       Normal    Created                        pod/streamingapp-smoke-test                           Created container: smoke
+8m20s       Normal    Started                        pod/streamingapp-smoke-test                           Started container smoke
+6m8s        Normal    Scheduled                      pod/streamingapp-smoke-test                           Successfully assigned streamingapp/streamingapp-smoke-test to ip-10-42-105-109.ap-south-1.compute.internal
+6m7s        Normal    Pulling                        pod/streamingapp-smoke-test                           Pulling image "curlimages/curl:8.10.1"
+6m4s        Normal    Pulled                         pod/streamingapp-smoke-test                           Successfully pulled image "curlimages/curl:8.10.1" in 3.677s (3.677s including waiting). Image size: 9414401 bytes.
+6m4s        Normal    Started                        pod/streamingapp-smoke-test                           Started container smoke
+6m4s        Normal    Created                        pod/streamingapp-smoke-test                           Created container: smoke
+5m59s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-chmvp                Created container: wait-for-mongo
+5m59s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-chmvp                Container image "busybox:1.36" already present on machine
+5m59s       Normal    Scheduled                      pod/streamingapp-auth-5bc74bb87f-chmvp                Successfully assigned streamingapp/streamingapp-auth-5bc74bb87f-chmvp to ip-10-42-105-109.ap-south-1.compute.internal
+5m59s       Normal    SuccessfulCreate               replicaset/streamingapp-auth-5bc74bb87f               Created pod: streamingapp-auth-5bc74bb87f-chmvp
+5m59s       Normal    Killing                        pod/streamingapp-auth-5bc74bb87f-g7tjt                Stopping container auth
+5m58s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-chmvp                Started container auth
+5m58s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-chmvp                Started container wait-for-mongo
+5m58s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-chmvp                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+5m58s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-chmvp                Created container: auth
+5m26s       Normal    Scheduled                      pod/load-gen                                          Successfully assigned streamingapp/load-gen to ip-10-42-134-198.ap-south-1.compute.internal
+5m25s       Normal    Started                        pod/load-gen                                          Started container load-gen
+5m25s       Normal    Created                        pod/load-gen                                          Created container: load-gen
+5m25s       Normal    Pulled                         pod/load-gen                                          Container image "busybox:1.36" already present on machine
+4m39s       Normal    SuccessfulCreate               replicaset/streamingapp-auth-5bc74bb87f               Created pod: streamingapp-auth-5bc74bb87f-nrdpn
+4m39s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-nswrg                Container image "busybox:1.36" already present on machine
+4m39s       Normal    Scheduled                      pod/streamingapp-auth-5bc74bb87f-nrdpn                Successfully assigned streamingapp/streamingapp-auth-5bc74bb87f-nrdpn to ip-10-42-168-168.ap-south-1.compute.internal
+4m39s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-nrdpn                Container image "busybox:1.36" already present on machine
+4m39s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-nrdpn                Created container: wait-for-mongo
+4m39s       Normal    ScalingReplicaSet              deployment/streamingapp-auth                          Scaled up replica set streamingapp-auth-5bc74bb87f from 2 to 4
+4m39s       Normal    SuccessfulRescale              horizontalpodautoscaler/streamingapp-auth             New size: 4; reason: cpu resource utilization (percentage of request) above target
+4m39s       Normal    SuccessfulCreate               replicaset/streamingapp-auth-5bc74bb87f               Created pod: streamingapp-auth-5bc74bb87f-nswrg
+4m39s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-nswrg                Created container: wait-for-mongo
+4m39s       Normal    Scheduled                      pod/streamingapp-auth-5bc74bb87f-nswrg                Successfully assigned streamingapp/streamingapp-auth-5bc74bb87f-nswrg to ip-10-42-134-198.ap-south-1.compute.internal
+4m38s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-nrdpn                Started container wait-for-mongo
+4m38s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-nswrg                Started container wait-for-mongo
+4m37s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-nrdpn                Started container auth
+4m37s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-nswrg                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+4m37s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-nswrg                Created container: auth
+4m37s       Normal    Started                        pod/streamingapp-auth-5bc74bb87f-nswrg                Started container auth
+4m37s       Normal    Created                        pod/streamingapp-auth-5bc74bb87f-nrdpn                Created container: auth
+4m37s       Normal    Pulled                         pod/streamingapp-auth-5bc74bb87f-nrdpn                Container image "400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service:build-20260815075746" already present on machine
+48s         Normal    Killing                        pod/load-gen                                          Stopping container load-gen
