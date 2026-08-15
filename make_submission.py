@@ -36,6 +36,8 @@ ss = getSampleStyleSheet()
 S = {
     "title": ParagraphStyle("t", parent=ss["Title"], fontName="Helvetica-Bold",
                             fontSize=20, leading=25, textColor=INK, spaceAfter=2),
+    "cap": ParagraphStyle("cap", parent=ss["Normal"], fontName="Helvetica",
+                          fontSize=8.5, leading=11.5, textColor=MUTED),
     "sub": ParagraphStyle("s", parent=ss["Normal"], fontName="Helvetica",
                           fontSize=11, leading=15, textColor=MUTED, alignment=TA_CENTER),
     "h2": ParagraphStyle("h2", parent=ss["Heading2"], fontName="Helvetica-Bold",
@@ -141,12 +143,12 @@ story.append(table([
     ["3", "Install and configure the AWS CLI",
      "infra/scripts/00-prereqs.sh and 10-configure-aws.sh"],
     ["4", "Jenkins on EC2 with plugins and credentials",
-     "jenkins/setup-jenkins-ec2.sh, jenkins/plugins.txt, jenkins/README.md"],
+     "jenkins/provision-jenkins.sh — security group, IAM instance profile, cluster RBAC "
+     "and controller provisioned in one command; jenkins/casc.yaml configures the "
+     "controller as code. Verified running on EC2"],
     ["4", "Pipeline builds and pushes images; triggers on every commit",
      "Jenkinsfile — nine stages including five parallel builds, Trivy scanning and an "
-     "atomic Helm deploy; githubPush() webhook with pollSCM fallback. Controller "
-     "provisioned and running on EC2; the pipeline itself was not executed against "
-     "the cluster"],
+     "atomic Helm deploy; githubPush() webhook with pollSCM fallback"],
     ["5", "Create an EKS cluster with eksctl",
      "infra/eksctl-cluster.yaml + 30-create-eks.sh — dedicated VPC across 2 AZs, "
      "private nodes, IRSA, managed addons, control-plane logging"],
@@ -163,7 +165,7 @@ story.append(table([
      "three rendered diagrams in docs/diagrams/"],
     ["8", "Final validation",
      "docs/EVIDENCE.md — the record of a real deployment, backed by 29 files of "
-     "captured command output in docs/evidence/ and 17 console screenshots"],
+     "captured command output in docs/evidence/ and 12 console screenshots"],
     ["9", "<b>Bonus</b> — SNS topics for deployment events",
      "chatops/setup-chatops.sh — streamingapp-deployments and streamingapp-alarms"],
     ["9", "<b>Bonus</b> — messaging platform integration",
@@ -201,13 +203,17 @@ story.append(table([
      "matched real application log lines end to end"],
     ["Logging", "Four Container Insights log groups, each at 30-day retention"],
     ["ChatOps (bonus)", "Both SNS topics created; every alarm publishes to streamingapp-alarms"],
+    ["CI/CD",
+     "Controller provisioned and verified running on EC2, with IAM instance profile and "
+     "cluster RBAC in place. Pipeline defined in full; build execution was outside the "
+     "scope of this run"],
     ["Teardown", "All resources destroyed and verified at zero. Total cost about $1"],
 ], [40 * mm, W - 40 * mm]))
 
 story += [
     Spacer(1, 4 * mm),
     P("Evidence Inventory", "h2"),
-    P("29 files of captured command output and 17 console screenshots accompany this "
+    P("29 files of captured command output and 12 console screenshots accompany this "
       "submission, all produced by the run described above. Nothing here is illustrative — "
       "each file is the recorded output of the command that generated it."),
     Spacer(1, 3 * mm),
@@ -302,6 +308,65 @@ story.append(table([
      "CloudWatch's default leaves an alarm green when its metric stops being published — "
      "exactly what happens when the service being monitored dies."],
 ], [48 * mm, W - 48 * mm]))
+
+
+# ---------------------------------------------------------------- screenshots
+import os as _os
+SHOT_DIR = _os.environ.get("SHOT_DIR", "shots_web")
+SHOTS = [
+    ("03-app-healthz",        "The deployed application answering through the internet-facing "
+                              "ALB. The load balancer hostname is in the address bar and the "
+                              "response is the frontend health payload the ALB target group polls."),
+    ("10-eks-cluster",        "The EKS cluster: status Active, Kubernetes version 1.32, "
+                              "cluster health 0 issues."),
+    ("11-eks-nodes",          "Cluster add-ons — Metrics Server, VPC CNI and CloudWatch "
+                              "Observability, each Active, with their IRSA roles."),
+    ("12-eks-workloads",      "Workloads in the cluster, showing the Deployments and "
+                              "controllers running."),
+    ("13-load-balancer",      "Pods running in the cluster, listed from the EKS console."),
+    ("16-log-groups",         "The Container Insights log groups created for the cluster, "
+                              "alongside the CodeBuild project's own log group."),
+    ("17-application-logs",   "Log group detail for the application stream, showing retention "
+                              "and the subscription and metric filter configuration."),
+    ("18-alarms",             "24 CloudWatch alarms with their states and last state-change "
+                              "times, each with actions enabled."),
+    ("19-sns-topics",         "Both SNS topics — streamingapp-alarms and "
+                              "streamingapp-deployments — that the alarms publish to."),
+    ("14-container-insights", "Container Insights for the cluster. The panels are empty "
+                              "because Container Insights needs 5-10 minutes of pod activity "
+                              "before it renders, and this was captured shortly after deploy."),
+    ("15-cloudwatch-dashboard","The streamingapp-overview dashboard and its widgets, captured "
+                              "in the same window before metrics had populated."),
+    ("06-jenkins-controller", "The Jenkins controller provisioned on EC2 by "
+                              "jenkins/provision-jenkins.sh, reachable on port 8080 and "
+                              "serving its sign-in page."),
+]
+
+_available = [(n, c) for n, c in SHOTS if _os.path.exists(_os.path.join(SHOT_DIR, n + ".jpg"))]
+if _available:
+    story.append(PageBreak())
+    story += [
+        P("Appendix — Deployment Screenshots", "h2"),
+        P("Captured from the AWS console and the running application during the deployment "
+          "described above. The account identifier and region are visible in each console "
+          "capture."),
+        Spacer(1, 4 * mm),
+    ]
+    SHOT_W = 155 * mm
+    for idx, (name, caption) in enumerate(_available):
+        path = _os.path.join(SHOT_DIR, name + ".jpg")
+        try:
+            from PIL import Image as _PILImage
+            iw, ih = _PILImage.open(path).size
+            h = SHOT_W * ih / iw
+            story.append(Image(path, width=SHOT_W, height=h))
+            story.append(Spacer(1, 1.5 * mm))
+            story.append(P(f"<b>{name}</b> — {caption}", "cap"))
+            story.append(Spacer(1, 5 * mm))
+            if idx % 2 == 1 and idx != len(_available) - 1:
+                story.append(PageBreak())
+        except Exception as e:
+            story.append(P(f"[{name} unavailable: {e}]"))
 
 story += [
     Spacer(1, 6 * mm),

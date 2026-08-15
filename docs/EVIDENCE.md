@@ -132,11 +132,17 @@ which is what the alarm actions need.
 
 ## 5. Browser captures
 
-17 screenshots in [`docs/screenshots/`](screenshots/), each mapped to the step
-it evidences in [SCREENSHOTS.md](SCREENSHOTS.md): the running application, ECR
-repositories and image tags, the EKS cluster and its nodes and workloads, the
-ALB with healthy targets, CodeBuild, Container Insights, the CloudWatch
-dashboard, log groups, application log lines, the 24 alarms, and the SNS topics.
+12 screenshots in [`docs/screenshots/`](screenshots/): the running application
+answering through the ALB, the EKS cluster and its add-ons, workloads and pods,
+the Jenkins controller, Container Insights, the CloudWatch dashboard, the log
+groups and application log group detail, the 24 alarms, and both SNS topics.
+
+Captures of the ECR repositories and the CodeBuild project were discarded rather
+than included — the console session had expired on one and the other caught the
+wrong page. Both are covered by captured command output instead, in
+[`01-ecr-repositories.txt`](evidence/01-ecr-repositories.txt) and
+[`06-log-groups.txt`](evidence/06-log-groups.txt), which is stronger evidence
+than a screenshot in any case.
 
 ---
 

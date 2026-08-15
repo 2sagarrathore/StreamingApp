@@ -1,5 +1,13 @@
 # Screenshot checklist
 
+> **Note on the captures in this repository.** The 12 images in
+> `docs/screenshots/` are from the 15 August 2026 deployment. Five further
+> captures were taken and then discarded: two caught the wrong browser window,
+> one an expired console session, one a blank page, and one showed a password
+> manager overlay. They are not in the repository. Where a discarded capture was
+> the only visual for a step, `docs/evidence/` carries the equivalent as captured
+> command output.
+
 `run-project.sh` captures everything that has a command-line form into
 `docs/evidence/`. This file covers the rest — the console views that only exist
 in a browser. Save each one into `docs/screenshots/` using the filename in the

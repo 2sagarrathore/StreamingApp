@@ -24,7 +24,7 @@ day.
 - Torn down and verified at zero; total cost about **$1**
 
 **29 files** of captured command output in [`docs/evidence/`](docs/evidence/)
-and **17** console screenshots in [`docs/screenshots/`](docs/screenshots/). The
+and **12** console screenshots in [`docs/screenshots/`](docs/screenshots/). The
 full record is [docs/EVIDENCE.md](docs/EVIDENCE.md).
 
 On CI/CD: the pipeline is defined in full and its provisioning automation runs
@@ -98,7 +98,7 @@ The reasoning is written up in
     ├── evidence/                  # real command output from the verified run
     ├── APPLICATION.md             # the original app README
     ├── diagrams/                  # mermaid sources + rendered PNG/SVG
-    └── screenshots/               # 17 console captures from the verified run
+    └── screenshots/               # 12 console captures from the verified run
 ```
 
 ---
