@@ -64,12 +64,15 @@ iam:
               - sns:Publish
             Resource: "*"
 
-    # Fluent Bit ships container logs to CloudWatch Logs.
+    # CloudWatch agent + Fluent Bit ship metrics and container logs to
+    # CloudWatch. There is no "cloudWatch" entry in eksctl's wellKnownPolicies
+    # (that key only exists under nodegroup withAddonPolicies), so the managed
+    # policy is attached by ARN instead.
     - metadata:
         name: cloudwatch-agent
         namespace: amazon-cloudwatch
-      wellKnownPolicies:
-        cloudWatch: true
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
 
     - metadata:
         name: fluent-bit
