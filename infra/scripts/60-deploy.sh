@@ -62,6 +62,35 @@ else
   IRSA_ROLE_ARN=""
 fi
 
+# ---- clear a release left locked by an interrupted run ---------------------
+# Helm marks a release pending-* for the duration of an operation and clears it
+# at the end. If the process is killed in between — a CloudShell session timing
+# out mid-deploy is the usual way — the marker survives and every later attempt
+# dies with "another operation (install/upgrade/rollback) is in progress".
+# Nothing is actually running at that point; the lock is just stale.
+RELEASE_STATUS="$(helm status "${HELM_RELEASE}" -n "${K8S_NAMESPACE}" -o json 2>/dev/null \
+                  | jq -r '.info.status // empty' 2>/dev/null || true)"
+case "${RELEASE_STATUS}" in
+  pending-install)
+    # Nothing was ever successfully installed, so there is no good revision to
+    # go back to — remove the partial release and install cleanly.
+    warn "a previous install was interrupted (${RELEASE_STATUS}) — removing the partial release"
+    helm uninstall "${HELM_RELEASE}" -n "${K8S_NAMESPACE}" --wait --timeout 5m || true
+    ok "stale release cleared"
+    ;;
+  pending-upgrade|pending-rollback)
+    # There is a previously deployed revision, so prefer rolling back to it over
+    # destroying a release that is probably still serving traffic.
+    warn "a previous upgrade was interrupted (${RELEASE_STATUS}) — rolling back to the last completed revision"
+    helm rollback "${HELM_RELEASE}" -n "${K8S_NAMESPACE}" --wait --timeout 5m \
+      || { warn "rollback failed — removing the release so this deploy can proceed"
+           helm uninstall "${HELM_RELEASE}" -n "${K8S_NAMESPACE}" --wait --timeout 5m || true; }
+    ok "release unlocked"
+    ;;
+  "") : ;;                       # no release yet — first install
+  *)  ok "existing release is ${RELEASE_STATUS}" ;;
+esac
+
 log "Deploying ${HELM_RELEASE} (image tag: ${IMAGE_TAG})"
 helm upgrade --install "${HELM_RELEASE}" "${CHART}" \
   --namespace "${K8S_NAMESPACE}" \
