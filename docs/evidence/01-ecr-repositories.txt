@@ -1,0 +1,13 @@
+$ aws ecr describe-repositories --region ap-south-1 --query repositories[].{Repository:repositoryName,URI:repositoryUri,Scan:imageScanningConfiguration.scanOnPush} --output table
+
+----------------------------------------------------------------------------------------------------------------------------
+|                                                   DescribeRepositories                                                   |
++---------------------------------+-------+--------------------------------------------------------------------------------+
+|           Repository            | Scan  |                                      URI                                       |
++---------------------------------+-------+--------------------------------------------------------------------------------+
+|  streamingapp/auth-service      |  True |  400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/auth-service       |
+|  streamingapp/chat-service      |  True |  400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/chat-service       |
+|  streamingapp/admin-service     |  True |  400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/admin-service      |
+|  streamingapp/frontend          |  True |  400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/frontend           |
+|  streamingapp/streaming-service |  True |  400398151988.dkr.ecr.ap-south-1.amazonaws.com/streamingapp/streaming-service  |
++---------------------------------+-------+--------------------------------------------------------------------------------+

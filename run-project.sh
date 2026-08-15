@@ -356,7 +356,8 @@ SUMMARY="${EVIDENCE_DIR}/validation-summary.md"
   echo "## Files in this directory"
   echo
   echo '```'
-  find "${EVIDENCE_DIR}" -maxdepth 1 -type f -printf '%f\n' | sort
+  # -printf is a GNU extension; BSD find (macOS) does not have it.
+  find "${EVIDENCE_DIR}" -maxdepth 1 -type f -exec basename {} \; | sort
   echo '```'
 } > "${SUMMARY}"
 

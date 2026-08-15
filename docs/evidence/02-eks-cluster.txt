@@ -1,0 +1,4 @@
+$ eksctl get cluster --region ap-south-1
+
+NAME			REGION		EKSCTL CREATED
+streamingapp-eks	ap-south-1	True

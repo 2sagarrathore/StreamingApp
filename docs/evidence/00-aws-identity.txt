@@ -1,0 +1,7 @@
+$ aws sts get-caller-identity
+
+{
+    "UserId": "AROAV2OMW6E2DTHNLZO5A:SagarRathore",
+    "Account": "400398151988",
+    "Arn": "arn:aws:sts::400398151988:assumed-role/AWSReservedSSO_AdministratorAccess_cfc463992d0a7d72/SagarRathore"
+}

@@ -1,0 +1,21 @@
+$ kubectl get pods -n kube-system
+
+NAME                                                         READY   STATUS    RESTARTS   AGE
+aws-load-balancer-controller-687c95dcdf-cpvn6                1/1     Running   0          46m
+aws-load-balancer-controller-687c95dcdf-rqpcb                1/1     Running   0          46m
+aws-node-98lx2                                               2/2     Running   0          49m
+aws-node-mfhtl                                               2/2     Running   0          49m
+aws-node-qmqgc                                               2/2     Running   0          50m
+cluster-autoscaler-aws-cluster-autoscaler-574c44dbd8-f7b6g   1/1     Running   0          45m
+coredns-578d46f8cb-4g5gz                                     1/1     Running   0          55m
+coredns-578d46f8cb-s9q7x                                     1/1     Running   0          55m
+ebs-csi-controller-5cb4467db8-k5sl7                          6/6     Running   0          48m
+ebs-csi-controller-5cb4467db8-qrjk6                          6/6     Running   0          48m
+ebs-csi-node-bpr4v                                           3/3     Running   0          48m
+ebs-csi-node-sbxcm                                           3/3     Running   0          48m
+ebs-csi-node-snfc7                                           3/3     Running   0          48m
+kube-proxy-9qvl5                                             1/1     Running   0          50m
+kube-proxy-9twf5                                             1/1     Running   0          49m
+kube-proxy-r59sj                                             1/1     Running   0          50m
+metrics-server-8b98d4694-7kd2k                               1/1     Running   0          47m
+metrics-server-8b98d4694-f8np4                               1/1     Running   0          47m

@@ -176,6 +176,16 @@ spec:
             - name: nginx-run
               mountPath: /var/run
             {{- end }}
+            {{- if eq $name "admin" }}
+            # routes/video.route.js does mkdirSync(cwd()/tmp-uploads) at module
+            # load and multer stages uploads there before they go to S3. The
+            # image is owned by root and the process runs as 10001, so without
+            # a writable volume here the container dies on EACCES before it
+            # ever listens. podSecurityContext.fsGroup makes an emptyDir
+            # group-writable by that UID, which is what makes this work.
+            - name: upload-scratch
+              mountPath: /app/tmp-uploads
+            {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
@@ -183,6 +193,10 @@ spec:
         - name: nginx-cache
           emptyDir: {}
         - name: nginx-run
+          emptyDir: {}
+        {{- end }}
+        {{- if eq $name "admin" }}
+        - name: upload-scratch
           emptyDir: {}
         {{- end }}
 {{- end }}
