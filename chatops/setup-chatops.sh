@@ -23,10 +23,17 @@ require_account
 FUNCTION_NAME="${PROJECT}-slack-notifier"
 ROLE_NAME="${PROJECT}-chatops-lambda"
 
+# The Slack notifier is the bonus half of this step. The SNS topics are not
+# optional: monitoring/create-alarms.sh sets --alarm-actions to the alarms
+# topic, and CloudWatch rejects put-metric-alarm outright if that ARN does not
+# resolve. So without a webhook we still create the topics and stop before the
+# Lambda, rather than exiting and silently breaking every alarm downstream.
+TOPICS_ONLY=false
 if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
+  TOPICS_ONLY=true
   cat <<'EOF'
 
-SLACK_WEBHOOK_URL is not set.
+SLACK_WEBHOOK_URL is not set — creating the SNS topics only.
 
 Create an incoming webhook:
   1. https://api.slack.com/apps  ->  Create New App  ->  From scratch
@@ -34,11 +41,10 @@ Create an incoming webhook:
   3. Features -> Incoming Webhooks -> toggle On -> Add New Webhook to Workspace
   4. Choose the channel (e.g. #deployments) and copy the URL
 
-Then re-run:
+Then re-run to add the Slack notifier:
   SLACK_WEBHOOK_URL='https://hooks.slack.com/services/T.../B.../xxx' ./chatops/setup-chatops.sh
 
 EOF
-  die "missing SLACK_WEBHOOK_URL"
 fi
 
 # ---------------------------------------------------------------------------
@@ -54,6 +60,12 @@ for topic in "${SNS_TOPIC_DEPLOY}" "${SNS_TOPIC_ALARMS}"; do
   TOPIC_ARNS["${topic}"]="${ARN}"
   ok "${topic} -> ${ARN}"
 done
+
+if [[ "${TOPICS_ONLY}" == "true" ]]; then
+  ok "SNS topics ready — alarms can publish to them now"
+  log "Skipping the Lambda notifier (no SLACK_WEBHOOK_URL)"
+  exit 0
+fi
 
 # ---------------------------------------------------------------------------
 log "2/5  IAM role for the Lambda"

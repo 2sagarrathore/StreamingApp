@@ -24,7 +24,7 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "${REPO_ROOT}"
+cd "${REPO_ROOT}" || { echo "could not enter ${REPO_ROOT}" >&2; exit 1; }
 
 # shellcheck source=infra/env.sh
 source "${REPO_ROOT}/infra/env.sh"
@@ -183,13 +183,21 @@ capture "04-pvc"          kubectl get pvc -n "${K8S_NAMESPACE}"
 
 # ---------------------------------------------------------------------------
 if [[ "${SKIP_MONITORING}" == "false" ]]; then
-  phase "05-monitoring" "Set up CloudWatch monitoring and logging" \
+  # ChatOps first, and not just because it is a later step in the brief:
+  # create-alarms.sh points every alarm's --alarm-actions at the alarms topic,
+  # and CloudWatch refuses to create an alarm whose action ARN does not
+  # resolve. Without the topics the whole monitoring phase produces zero
+  # alarms. Runs topics-only unless SLACK_WEBHOOK_URL is set.
+  phase "05-chatops" "Create the SNS topics (and the Slack notifier, if configured)" \
+    "${REPO_ROOT}/chatops/setup-chatops.sh"
+
+  phase "06-monitoring" "Set up CloudWatch monitoring and logging" \
     "${REPO_ROOT}/monitoring/setup-monitoring.sh"
 
-  capture "05-alarms" aws cloudwatch describe-alarms --region "${AWS_REGION}" \
+  capture "06-alarms" aws cloudwatch describe-alarms --region "${AWS_REGION}" \
     --alarm-name-prefix "${PROJECT}-" \
     --query 'MetricAlarms[].{Alarm:AlarmName,State:StateValue,Metric:MetricName}' --output table
-  capture "05-log-groups" aws logs describe-log-groups --region "${AWS_REGION}" \
+  capture "06-log-groups" aws logs describe-log-groups --region "${AWS_REGION}" \
     --log-group-name-prefix "/aws/containerinsights/${CLUSTER_NAME}" \
     --query 'logGroups[].{Group:logGroupName,RetentionDays:retentionInDays}' --output table
 fi
