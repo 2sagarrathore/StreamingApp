@@ -337,9 +337,6 @@ SHOTS = [
                               "before it renders, and this was captured shortly after deploy."),
     ("15-cloudwatch-dashboard","The streamingapp-overview dashboard and its widgets, captured "
                               "in the same window before metrics had populated."),
-    ("06-jenkins-controller", "The Jenkins controller provisioned on EC2 by "
-                              "jenkins/provision-jenkins.sh, reachable on port 8080 and "
-                              "serving its sign-in page."),
 ]
 
 _available = [(n, c) for n, c in SHOTS if _os.path.exists(_os.path.join(SHOT_DIR, n + ".jpg"))]
@@ -349,7 +346,8 @@ if _available:
         P("Appendix — Deployment Screenshots", "h2"),
         P("Captured from the AWS console and the running application during the deployment "
           "described above. The account identifier and region are visible in each console "
-          "capture."),
+          "capture. A twelfth capture, of the Jenkins controller running on EC2, is in the "
+          "repository at <b>docs/screenshots/06-jenkins-controller.png</b>."),
         Spacer(1, 4 * mm),
     ]
     SHOT_W = 155 * mm
