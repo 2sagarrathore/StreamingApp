@@ -154,7 +154,15 @@ else
 dnf install -y git
 git clone --depth 1 "${REPO_URL}" /opt/streamingapp
 chmod +x /opt/streamingapp/jenkins/*.sh
-/opt/streamingapp/jenkins/setup-jenkins-ec2.sh
+
+# Fail loudly. This script deliberately has no -e, because the plugin and CasC
+# steps below are individually recoverable — but if the installer itself did
+# not finish there is no Jenkins to configure, and carrying on to touch
+# .bootstrap-complete would report success on an empty box.
+if ! /opt/streamingapp/jenkins/setup-jenkins-ec2.sh; then
+  echo "BOOTSTRAP FAILED: setup-jenkins-ec2.sh returned non-zero"
+  exit 1
+fi
 
 # ---- plugins ---------------------------------------------------------------
 # The distro package ships jenkins-plugin-cli in /opt/jenkins-plugin-manager.jar
