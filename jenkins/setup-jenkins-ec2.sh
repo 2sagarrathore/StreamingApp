@@ -31,7 +31,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-log "1/7  Base packages + Java 17 (required by Jenkins 2.4xx+)"
+log "1/7  Base packages + Java 21 (current Jenkins LTS refuses to start on 17)"
 # ---------------------------------------------------------------------------
 if [[ "${PKG_MGR}" == "dnf" ]]; then
   # Do NOT ask for "curl" here. Amazon Linux 2023 ships curl-minimal, which
@@ -39,9 +39,12 @@ if [[ "${PKG_MGR}" == "dnf" ]]; then
   # dnf aborts the entire transaction with a wall of "conflicts with curl
   # provided by curl-minimal", so java, git and everything else silently fail
   # to install and the box comes up with no Jenkins on it.
-  dnf install -y java-17-amazon-corretto-headless git wget unzip tar jq which
+  # Java 21, not 17. Jenkins LTS now refuses to boot on 17 with "Running with
+  # Java 17 ... which is older than the minimum required version (Java 21)",
+  # and systemd gives up after five restart attempts.
+  dnf install -y java-21-amazon-corretto-headless git wget unzip tar jq which
 else
-  apt-get install -y openjdk-17-jdk git curl wget unzip tar jq
+  apt-get install -y openjdk-21-jdk git curl wget unzip tar jq
 fi
 command -v curl >/dev/null 2>&1 || { echo "curl is missing and every later step needs it"; exit 1; }
 ok "java $(java -version 2>&1 | head -1)"

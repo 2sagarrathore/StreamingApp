@@ -1,0 +1,60 @@
+# Jenkins controller — status at the end of the run
+
+Provisioned:  2026-08-15, ap-south-1
+Instance:     i-03c01c68dbe1b2a39 (t3.medium, Amazon Linux 2023)
+URL:          http://13.204.252.53:8080
+Ingress:      tcp/8080 restricted to the provisioning IP only
+IAM:          EC2 instance profile streamingapp-jenkins-role, no static keys
+Cluster RBAC: role mapped into aws-auth as group streamingapp-deployers
+
+## What was achieved
+
+The controller was provisioned end to end by jenkins/provision-jenkins.sh:
+security group, IAM instance profile, EKS RBAC mapping, EC2 instance, and the
+full toolchain installed by jenkins/setup-jenkins-ec2.sh (Java 21, Jenkins LTS,
+Docker, AWS CLI v2, kubectl, helm, eksctl, trivy). Jenkins started and served
+HTTP 200 on port 8080. Screenshot: docs/screenshots/06-jenkins-controller.png
+
+## What was NOT achieved
+
+The pipeline job was never executed. Plugin installation did not complete, so
+the Configuration-as-Code file was never applied and the streamingapp-pipeline
+job was never created. No build ran, and there is therefore no build console
+log in this directory.
+
+This is recorded rather than glossed over: Step 4 of the brief is evidenced by
+the pipeline definition and the provisioning automation in this repository, not
+by a live build.
+
+## Why plugin installation failed
+
+Four separate problems were found and fixed in sequence; the fifth was not
+resolved before the environment was torn down to stop billing.
+
+  1. dnf install listed "curl", which conflicts with the curl-minimal package
+     preinstalled on Amazon Linux 2023. The whole transaction aborted, so Java
+     and everything after it never installed. Fixed.
+
+  2. The installer pinned Java 17. Current Jenkins LTS refuses to start on
+     anything below Java 21 and systemd gave up after five restarts. Fixed.
+
+  3. jenkins-plugin-cli is not on PATH in the RPM distribution, and the
+     documented fallback URL for the plugin-manager JAR returns 404.
+
+  4. Jenkins' own CLI (served at /jnlpJars/jenkins-cli.jar) rejected the
+     connection with "Jenkins URL is not configured". Writing
+     jenkins.model.JenkinsLocationConfiguration.xml directly fixed that.
+
+  5. The CLI then rejected the connection with "Unexpected request origin",
+     because the configured URL was the public address while the CLI was
+     connecting over localhost. Unresolved at teardown.
+
+Fixes 1 and 2 are committed to this repository. A future run starts from a
+working Java 21 install with the package conflict gone, which is where the
+remaining work would resume.
+
+## Reproducing
+
+    ./jenkins/provision-jenkins.sh      # controller
+    ./jenkins/run-pipeline.sh           # trigger a build and stream its console
+    ./jenkins/provision-jenkins.sh --destroy
