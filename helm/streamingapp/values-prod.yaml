@@ -1,0 +1,103 @@
+# ===========================================================================
+# Production overlay.
+#
+#   helm upgrade --install streamingapp helm/streamingapp \
+#     -n streamingapp -f helm/streamingapp/values-prod.yaml \
+#     --set global.image.registry=$ECR_REGISTRY \
+#     --set global.image.tag=$IMAGE_TAG \
+#     --set secrets.jwtSecret=$JWT_SECRET \
+#     --set mongodb.auth.rootPassword=$MONGO_PASSWORD
+#
+# Secrets are deliberately NOT in this file — they come from Jenkins
+# credentials at deploy time, so nothing sensitive lands in git.
+# ===========================================================================
+
+global:
+  image:
+    pullPolicy: Always      # tags are immutable per build, but be explicit
+  awsRegion: ap-south-1
+
+serviceAccount:
+  create: true
+  name: streamingapp-app
+  annotations:
+    # Produced by infra/scripts/30-create-eks.sh (roleName: streamingapp-app-irsa).
+    # Replace <ACCOUNT_ID> or let deploy.sh substitute it.
+    eks.amazonaws.com/role-arn: "arn:aws:iam::<ACCOUNT_ID>:role/streamingapp-app-irsa"
+
+config:
+  clientUrls: ""                       # same-origin via the nginx proxy
+  streamingPublicUrl: "/svc/streaming"
+  awsS3Bucket: ""                      # set to your media bucket
+  logLevel: info
+
+services:
+  frontend:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 12
+      targetCPUUtilizationPercentage: 65
+  auth:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 12
+      targetCPUUtilizationPercentage: 65
+    resources:
+      requests: { cpu: 200m, memory: 256Mi }
+      limits:   { cpu: 1000m, memory: 1Gi }
+  streaming:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 20
+      targetCPUUtilizationPercentage: 60
+    resources:
+      requests: { cpu: 300m, memory: 384Mi }
+      limits:   { cpu: 1500m, memory: 1536Mi }
+  admin:
+    replicaCount: 2
+  chat:
+    # Still 1 — see the note in values.yaml about the Socket.IO Redis adapter.
+    replicaCount: 1
+
+mongodb:
+  enabled: true
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 50Gi
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits:   { cpu: 2000m, memory: 4Gi }
+
+ingress:
+  enabled: true
+  className: alb
+  host: ""
+  certificateArn: ""     # set an ACM ARN to turn on HTTPS + redirect
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    # 1h idle timeout so Socket.IO connections are not cut mid-watch-party
+    alb.ingress.kubernetes.io/load-balancer-attributes: >-
+      idle_timeout.timeout_seconds=3600,
+      routing.http2.enabled=true,
+      access_logs.s3.enabled=false
+    alb.ingress.kubernetes.io/tags: Project=streamingapp,Environment=prod
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+topologySpreadEnabled: true
+networkPolicy:
+  enabled: false          # flip on once the VPC CNI has policy enforcement enabled

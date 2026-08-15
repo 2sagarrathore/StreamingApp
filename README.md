@@ -1,138 +1,184 @@
-# StreamingApp
+# StreamFlix on AWS EKS — Orchestration & Scaling
 
-Stream premium video content, host live watch parties, and manage your catalogue with a modern microservice architecture. The platform now ships with a production-ready admin portal, real-time chat, S3-backed adaptive streaming, and a redesigned cinematic frontend experience.
+Graded project: containerise a MERN microservice platform, ship it through a
+Jenkins pipeline into Amazon EKS, and run it with autoscaling, centralised
+observability and ChatOps.
+
+**Application:** [StreamingApp](https://github.com/UnpredictablePrashant/StreamingApp) —
+a video streaming platform with a React SPA and four Node microservices
+(auth, streaming, admin, chat) over MongoDB.
+
+---
 
 ## Architecture
 
-| Service | Port | Description |
-| --- | --- | --- |
-| `authService` | 3001 | User authentication, registration, JWT issuance |
-| `streamingService` | 3002 | Video catalogue, S3 playback endpoints, public APIs |
-| `adminService` | 3003 | Dedicated admin microservice for asset management and uploads |
-| `chatService` | 3004 | Websocket + REST chat for live watch parties |
-| `frontend` | 3000 | React SPA with revamped UI and integrated chat |
-| `mongo` | 27017 | Shared MongoDB instance |
+![Architecture](docs/diagrams/architecture.png)
 
-All backend services share common database models and utilities through `backend/common`.
+Users hit an internet-facing ALB, which routes to the frontend pods. nginx
+inside the frontend container serves the SPA *and* reverse-proxies every backend
+under `/svc/*`, so the whole platform is same-origin — no CORS, one target
+group, one health check, and a React build that is portable across environments.
+The reasoning is written up in
+[docs/ARCHITECTURE.md §2](docs/ARCHITECTURE.md#why-one-alb-target-instead-of-path-based-routing-to-five-services).
 
-## Environment Configuration
+---
 
-Create an `.env` for each service (or export variables before running). All services accept the standard AWS credentials for S3 access.
+## What is in this repository
 
-### Auth Service (`backend/authService/.env`)
-```ini
-PORT=3001
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=ap-south-1
-AWS_S3_BUCKET=
+```
+.
+├── run-project.sh                 # one-command deploy + evidence capture
+├── Jenkinsfile                    # CI/CD: parallel builds → ECR → Helm → EKS → SNS
+├── docker-compose.yml             # local parity stack
+│
+├── frontend/
+│   ├── Dockerfile                 # multi-stage CRA build → unprivileged nginx
+│   └── nginx/                     # SPA + same-origin reverse proxy config
+├── backend/{auth,streaming,admin,chat}Service/
+│   └── Dockerfile                 # multi-stage, non-root, tini, healthcheck
+│
+├── helm/streamingapp/             # the whole platform as one chart
+│   ├── values.yaml                # dev defaults
+│   ├── values-prod.yaml           # production overlay
+│   └── templates/                 # Deployments, Services, HPAs, PDBs,
+│                                  # Ingress, MongoDB StatefulSet, NetworkPolicies,
+│                                  # ServiceAccount (IRSA), smoke test
+│
+├── infra/
+│   ├── env.sh                     # single source of truth for every AWS name
+│   ├── eksctl-cluster.yaml        # VPC, node group, IRSA, addons, logging
+│   ├── iam/                       # least-privilege Jenkins CI policy
+│   └── scripts/00→99              # prereqs, aws config, ECR, EKS, addons,
+│                                  # Jenkins IAM, deploy, teardown
+│
+├── jenkins/
+│   ├── setup-jenkins-ec2.sh       # one-shot controller bootstrap
+│   ├── plugins.txt
+│   └── README.md                  # credentials, job setup, webhook, troubleshooting
+│
+├── monitoring/
+│   ├── setup-monitoring.sh        # Container Insights + Fluent Bit + retention
+│   ├── create-dashboard.sh        # 10-widget CloudWatch dashboard
+│   ├── create-alarms.sh           # 21+ alarms → SNS
+│   └── fluent-bit-custom.yaml     # structured-log parsers
+│
+├── chatops/
+│   ├── setup-chatops.sh           # SNS topics + Lambda + subscriptions
+│   └── lambda/index.mjs           # SNS → Slack Block Kit (zero dependencies)
+│
+└── docs/
+    ├── ARCHITECTURE.md            # design, trade-offs, security, cost
+    ├── DEPLOYMENT.md              # step-by-step runbook + troubleshooting
+    ├── EVIDENCE.md                # Step 8 validation record
+    ├── evidence/                  # command output, written by run-project.sh
+    ├── APPLICATION.md             # the original app README
+    ├── diagrams/                  # mermaid sources + rendered PNG/SVG
+    └── screenshots/               # your deployment evidence goes here
 ```
 
-### Streaming Service (`backend/streamingService/.env`)
-```ini
-PORT=3002
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=ap-south-1
-AWS_S3_BUCKET=
-AWS_CDN_URL=
-STREAMING_PUBLIC_URL=http://localhost:3002
-```
+---
 
-### Admin Service (`backend/adminService/.env`)
-```ini
-PORT=3003
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=ap-south-1
-AWS_S3_BUCKET=
-```
+## Quick start
 
-### Chat Service (`backend/chatService/.env`)
-```ini
-PORT=3004
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
-```
-
-### Frontend build variables (`frontend/.env` or Docker build args)
-```ini
-REACT_APP_AUTH_API_URL=http://localhost:3001/api
-REACT_APP_STREAMING_API_URL=http://localhost:3002/api
-REACT_APP_STREAMING_PUBLIC_URL=http://localhost:3002
-REACT_APP_ADMIN_API_URL=http://localhost:3003/api/admin
-REACT_APP_CHAT_API_URL=http://localhost:3004/api/chat
-REACT_APP_CHAT_SOCKET_URL=http://localhost:3004
-```
-
-## Running with Docker Compose
-
-1. Populate the environment variables above (or rely on the defaults baked into `docker-compose.yml`).
-2. Build and start the stack:
-   ```bash
-   docker-compose up --build
-   ```
-3. Navigate to `http://localhost:3000` for the web app.
-
-The compose file provisions MongoDB plus all four Node.js microservices. S3 credentials are optional for local testing—you can still browse seeded metadata, but streaming requires valid S3 objects.
-
-## Local Development
-
-Install dependencies for each service:
+Everything, in one command — provisions each step in order and records the real
+output of each into `docs/evidence/`:
 
 ```bash
-# auth service
-cd backend/authService && npm install
+./infra/scripts/00-prereqs.sh      # toolchain, once
+./infra/scripts/10-configure-aws.sh
 
-# streaming service
-cd ../streamingService && npm install
+./run-project.sh                   # ECR → EKS → add-ons → deploy → monitoring
+                                   # → endpoint, autoscaling and self-healing checks
 
-# admin service
-cd ../adminService && npm install
-
-# chat service
-cd ../chatService && npm install
-
-# frontend
-cd ../../frontend && npm install
+./infra/scripts/99-teardown.sh     # when you are finished — do not skip this
 ```
 
-Run the services (in separate terminals) after starting MongoDB:
+Or run the phases individually:
 
 ```bash
-cd backend/authService && npm run dev
-cd backend/streamingService && npm run dev
-cd backend/adminService && npm run dev
-cd backend/chatService && npm run dev
-cd frontend && npm start
+./infra/scripts/20-create-ecr.sh --push
+./infra/scripts/30-create-eks.sh          # ~20 min
+./infra/scripts/40-cluster-addons.sh
+./infra/scripts/60-deploy.sh
+./monitoring/setup-monitoring.sh
+SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...' ./chatops/setup-chatops.sh
 ```
 
-## Feature Highlights
+Jenkins is set up separately — see [jenkins/README.md](jenkins/README.md).
 
-- **S3-backed adaptive streaming** with secure signed uploads for admins.
-- **Dedicated admin microservice** for video ingestion, metadata management, and featured curation.
-- **Real-time chat** overlay in the player (Socket.IO + persistent message history).
-- **Modern React experience** featuring cinematic hero sections, dynamic carousels, and responsive design.
-- **Role-aware access control** across frontend routes and backend microservices.
+Run it locally first if you want:
 
-## Testing
+```bash
+docker compose up --build      # http://localhost:3000
+```
 
-Automated tests are not yet included. Recommended smoke checks:
+---
 
-1. Register and log in through the web UI.
-2. Upload a small video + thumbnail via the admin dashboard (requires valid S3 credentials).
-3. Confirm playback from the browse page and verify that chat messages broadcast between multiple browser tabs.
+## Project requirements → where each one lives
 
-## License
+| # | Requirement | Implementation |
+|---|---|---|
+| 1 | Fork and sync with upstream | [docs/DEPLOYMENT.md §1](docs/DEPLOYMENT.md#step-1--fork-and-clone) |
+| 2 | Dockerfiles for each component | `frontend/Dockerfile`, `backend/*/Dockerfile` — multi-stage, non-root, `tini`, HEALTHCHECK |
+| 2 | Push to Amazon ECR | `infra/scripts/20-create-ecr.sh` — 5 repos, scan-on-push, lifecycle policy |
+| 3 | Install and configure AWS CLI | `infra/scripts/00-prereqs.sh`, `10-configure-aws.sh` |
+| 4 | Jenkins on EC2 + plugins + credentials | `jenkins/setup-jenkins-ec2.sh`, `plugins.txt`, `README.md` |
+| 4 | Pipeline builds and pushes to ECR | `Jenkinsfile` — 5 parallel builds |
+| 4 | Auto-trigger on commit | `githubPush()` webhook + `pollSCM` fallback |
+| 5 | EKS cluster via eksctl | `infra/eksctl-cluster.yaml` + `30-create-eks.sh` |
+| 5 | Deploy via Helm | `helm/streamingapp/` — 31 objects from one chart |
+| 6 | CloudWatch metrics and alarms | `monitoring/create-alarms.sh` — 21+ alarms; `create-dashboard.sh` |
+| 6 | Centralised logging | Fluent Bit → CloudWatch Logs, custom parsers, 30-day retention |
+| 7 | Architecture + deployment docs, diagrams | `docs/` — three rendered diagrams, full runbook |
+| 8 | Final validation | [docs/DEPLOYMENT.md §11](docs/DEPLOYMENT.md#step-11--validate) — automated by `run-project.sh`; record in [docs/EVIDENCE.md](docs/EVIDENCE.md) |
+| 9 | **Bonus:** SNS topics | `chatops/setup-chatops.sh` — deployments + alarms topics |
+| 9 | **Bonus:** messaging integration | `chatops/lambda/index.mjs` → Slack Block Kit (Telegram variant documented) |
 
-MIT © StreamFlix Team
+---
+
+## Design decisions worth reading
+
+These are the choices where the obvious option was not the one taken, each
+explained in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md):
+
+- **One ALB target, not five.** nginx in the frontend proxies the backends,
+  eliminating CORS and making the React image environment-portable.
+- **The chat service is pinned to one replica.** Socket.IO's in-process room
+  registry means a second replica silently drops messages between users on
+  different pods. Documented rather than papered over with sticky sessions.
+- **`--atomic` on every Helm deploy.** A build that cannot become ready rolls
+  itself back instead of leaving the cluster half-upgraded.
+- **Secrets are read back out of the cluster before each upgrade.** Regenerating
+  them per deploy would sign out every user and lock the app out of its own
+  database.
+- **Unique image tags per build.** Deploying `:latest` makes `helm upgrade` a
+  no-op — identical spec, no rollout.
+- **`preStop: sleep 10`.** Gives the endpoint controller time to deregister the
+  pod before shutdown, which is what removes the burst of 502s on every deploy.
+- **PDBs only for multi-replica components.** A PDB on a single-replica
+  Deployment blocks node drains forever.
+- **`treat-missing-data` set explicitly on every alarm.** The default leaves an
+  alarm green when its metric stops being published — which is exactly what
+  happens when a service dies.
+
+---
+
+## Cost warning
+
+Running 24/7 this stack costs roughly **$270/month** in ap-south-1 (EKS control
+plane $73, nodes $90, NAT $35, ALB $20, Jenkins $30, storage and the rest).
+
+Take your screenshots, then run `./infra/scripts/99-teardown.sh`. An idle
+cluster bills identically to a busy one.
+
+---
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — components, network topology, security, scaling, trade-offs, cost
+- [Validation record](docs/EVIDENCE.md) — Step 8 verification, mostly filled in by `run-project.sh`
+- [Deployment runbook](docs/DEPLOYMENT.md) — 12 steps, validation, troubleshooting table
+- [Jenkins setup](jenkins/README.md) — controller, credentials, job, webhook
+- [Monitoring](monitoring/README.md) — what is collected, Logs Insights queries, verification
+- [ChatOps](chatops/README.md) — SNS topics, Lambda, Slack and Telegram
+- [Application README](docs/APPLICATION.md) — the upstream app's own docs

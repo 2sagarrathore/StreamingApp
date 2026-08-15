@@ -1,0 +1,64 @@
+flowchart LR
+    subgraph TRIGGER["Trigger"]
+        PUSH["git push to main"]
+        HOOK["GitHub webhook<br/>/github-webhook/"]
+        POLL["pollSCM H/5 * * * *<br/>(fallback)"]
+    end
+
+    subgraph BUILD["Jenkins pipeline"]
+        S1["1 · Checkout<br/>IMAGE_TAG = build-N-sha"]
+        S2["2 · Preflight<br/>docker · aws · kubectl · helm"]
+
+        subgraph S3G["3 · Static checks (parallel)"]
+            L1["helm lint<br/>+ helm template"]
+            L2["hadolint"]
+            L3["shellcheck"]
+        end
+
+        S4["4 · ECR login"]
+
+        subgraph S5G["5 · Build and push (parallel)"]
+            B1["frontend"]
+            B2["auth-service"]
+            B3["streaming-service"]
+            B4["admin-service"]
+            B5["chat-service"]
+        end
+
+        S6["6 · Trivy scan<br/>HIGH + CRITICAL"]
+        S7["7 · helm upgrade --install<br/>--atomic --wait"]
+        S8["8 · Verify<br/>rollout status + helm test"]
+    end
+
+    subgraph OUT["Outcome"]
+        OK["SUCCESS"]
+        BAD["FAILURE<br/>auto-rollback"]
+        SNSN["SNS publish"]
+        SLACKN["Slack message"]
+    end
+
+    PUSH --> HOOK --> S1
+    POLL -.-> S1
+    S1 --> S2 --> S3G
+    L1 --> S4
+    L2 --> S4
+    L3 --> S4
+    S4 --> S5G
+    B1 --> S6
+    B2 --> S6
+    B3 --> S6
+    B4 --> S6
+    B5 --> S6
+    S6 --> S7 --> S8
+    S8 --> OK
+    S7 -.->|any pod not ready<br/>within 12m| BAD
+    OK --> SNSN
+    BAD --> SNSN
+    SNSN --> SLACKN
+
+    classDef pass fill:#2eb886,stroke:#1a6b4f,color:#fff
+    classDef fail fill:#d40e0d,stroke:#7d0808,color:#fff
+    classDef stage fill:#326ce5,stroke:#1a3f8f,color:#fff
+    class OK,SLACKN pass
+    class BAD fail
+    class S1,S2,S4,S6,S7,S8 stage

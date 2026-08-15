@@ -1,0 +1,93 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $root := . -}}
+{{- $full := include "streamingapp.fullname" . -}}
+# ---------------------------------------------------------------------------
+# Default-deny ingress inside the namespace, then allow exactly the two flows
+# the app needs: ALB -> frontend, and frontend -> backends -> mongodb.
+# Requires a CNI that enforces NetworkPolicy (enable the VPC CNI's
+# ENABLE_NETWORK_POLICY=true, or install Calico).
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $full }}-default-deny
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $full }}-frontend-from-alb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" (dict "root" $root "name" "frontend") | nindent 6 }}
+  policyTypes: ["Ingress"]
+  ingress:
+    # target-type: ip means the ALB talks straight to the pod from the VPC CIDR
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: {{ .Values.services.frontend.containerPort }}
+---
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled (ne $name "frontend") }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $full }}-{{ $name }}-from-frontend
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" $root | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" (dict "root" $root "name" $name) | nindent 6 }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "streamingapp.selectorLabels" (dict "root" $root "name" "frontend") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ $svc.containerPort }}
+---
+{{- end }}
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $full }}-mongodb-from-backends
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" (dict "root" $root "name" "mongodb") | nindent 6 }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        {{- range $name, $svc := .Values.services }}
+        {{- if and $svc.enabled (ne $name "frontend") }}
+        - podSelector:
+            matchLabels:
+              {{- include "streamingapp.selectorLabels" (dict "root" $root "name" $name) | nindent 14 }}
+        {{- end }}
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: 27017
+{{- end }}
+{{- end }}

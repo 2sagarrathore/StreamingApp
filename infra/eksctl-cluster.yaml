@@ -1,0 +1,141 @@
+# ---------------------------------------------------------------------------
+# eksctl cluster definition for the StreamFlix platform.
+#
+#   eksctl create cluster -f infra/eksctl-cluster.yaml
+#
+# Placeholders (__CLUSTER_NAME__, __AWS_REGION__, ...) are substituted by
+# infra/scripts/30-create-eks.sh from infra/env.sh, so this file never hard
+# codes an account or region.
+# ---------------------------------------------------------------------------
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: __CLUSTER_NAME__
+  region: __AWS_REGION__
+  version: "__K8S_VERSION__"
+  tags:
+    Project: __PROJECT__
+    Environment: __ENVIRONMENT__
+    ManagedBy: eksctl
+
+# Dedicated VPC with public + private subnets across 2 AZs.
+# Nodes live in private subnets; only the ALB is public.
+vpc:
+  cidr: 10.42.0.0/16
+  nat:
+    gateway: Single          # one NAT GW keeps the bill down for a project
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+
+# Enable IAM Roles for Service Accounts so pods get scoped AWS permissions
+# instead of node-wide credentials.
+iam:
+  withOIDC: true
+  serviceAccounts:
+    # Lets the app pods read/write the media bucket without static keys.
+    # roleOnly: eksctl creates the IAM role but NOT the ServiceAccount object —
+    # the Helm chart owns that, so `helm install` never collides with a
+    # pre-existing eksctl-managed resource. Wire them together with:
+    #   --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=<role arn>
+    - metadata:
+        name: __PROJECT__-app
+        namespace: __K8S_NAMESPACE__
+        labels: { app.kubernetes.io/part-of: __PROJECT__ }
+      roleOnly: true
+      roleName: __PROJECT__-app-irsa
+      attachPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetObjectAcl
+              - s3:PutObjectAcl
+            Resource:
+              - arn:aws:s3:::__S3_BUCKET__
+              - arn:aws:s3:::__S3_BUCKET__/*
+          - Effect: Allow
+            Action:
+              - sns:Publish
+            Resource: "*"
+
+    # Fluent Bit ships container logs to CloudWatch Logs.
+    - metadata:
+        name: cloudwatch-agent
+        namespace: amazon-cloudwatch
+      wellKnownPolicies:
+        cloudWatch: true
+
+    - metadata:
+        name: fluent-bit
+        namespace: amazon-cloudwatch
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+
+    # AWS Load Balancer Controller provisions the ALB from our Ingress object.
+    - metadata:
+        name: aws-load-balancer-controller
+        namespace: kube-system
+      wellKnownPolicies:
+        awsLoadBalancerController: true
+
+    # NOTE: the EBS CSI driver's service account is created by the managed
+    # addon block below (wellKnownPolicies.ebsCSIController), not here —
+    # declaring it in both places makes eksctl fail with a duplicate SA.
+
+    # Cluster Autoscaler adds/removes nodes as HPA scales pods out.
+    - metadata:
+        name: cluster-autoscaler
+        namespace: kube-system
+      wellKnownPolicies:
+        autoScaler: true
+
+managedNodeGroups:
+  - name: __NODEGROUP_NAME__
+    instanceType: __NODE_INSTANCE_TYPE__
+    minSize: __NODE_MIN__
+    maxSize: __NODE_MAX__
+    desiredCapacity: __NODE_DESIRED__
+    volumeSize: 40
+    volumeType: gp3
+    privateNetworking: true
+    amiFamily: AmazonLinux2023
+    labels:
+      role: application
+      workload: streamingapp
+    tags:
+      # Required for the Cluster Autoscaler to discover this ASG
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/__CLUSTER_NAME__: "owned"
+    iam:
+      withAddonPolicies:
+        imageBuilder: true      # pull from ECR
+        cloudWatch: true        # push metrics/logs
+        autoScaler: true
+        ebs: true
+        albIngress: true
+    updateConfig:
+      maxUnavailablePercentage: 33
+
+addons:
+  - name: vpc-cni
+    resolveConflicts: overwrite
+  - name: coredns
+    resolveConflicts: overwrite
+  - name: kube-proxy
+    resolveConflicts: overwrite
+  - name: aws-ebs-csi-driver
+    resolveConflicts: overwrite
+    wellKnownPolicies:
+      ebsCSIController: true
+
+# Ship control-plane logs to CloudWatch (Step 6 of the brief).
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+    logRetentionInDays: 30

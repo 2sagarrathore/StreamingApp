@@ -1,0 +1,39 @@
+{{- if .Values.ingress.enabled }}
+{{- $full := include "streamingapp.fullname" . -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $full }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    alb.ingress.kubernetes.io/group.name: {{ $full }}
+    {{- if .Values.ingress.certificateArn }}
+    # HTTPS: terminate TLS at the ALB and bounce plain HTTP up to it.
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.certificateArn | quote }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    {{- else }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - {{ if .Values.ingress.host }}host: {{ .Values.ingress.host | quote }}
+      {{ end }}http:
+        paths:
+          # A single rule on purpose. The frontend pod's nginx fans traffic out
+          # to the four backend Services on /svc/* and /socket.io, which keeps
+          # everything same-origin (no CORS, no preflight) and means the ALB
+          # only has one target group to health-check.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $full }}-frontend
+                port:
+                  number: {{ .Values.services.frontend.servicePort }}
+{{- end }}

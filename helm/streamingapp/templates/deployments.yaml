@@ -1,0 +1,189 @@
+{{- $root := . -}}
+{{- $full := include "streamingapp.fullname" . -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamingapp.componentName" (dict "root" $root "name" $name) }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  {{- if not $svc.autoscaling.enabled }}
+  # Replica count is only managed here when the HPA is off; otherwise omitting
+  # it lets the autoscaler own the field and stops Helm fighting it on upgrade.
+  replicas: {{ $svc.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" (dict "root" $root "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Roll the pods whenever config or secrets change, otherwise a
+        # `helm upgrade` that only touches a ConfigMap is a silent no-op.
+        checksum/config: {{ include (print $root.Template.BasePath "/configmap.yaml") $root | sha256sum }}
+        {{- if $root.Values.secrets.create }}
+        checksum/secret: {{ include (print $root.Template.BasePath "/secret.yaml") $root | sha256sum }}
+        {{- end }}
+        {{- with $root.Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "streamingapp.labels" $root | nindent 8 }}
+        app.kubernetes.io/component: {{ $name }}
+        {{- with $root.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "streamingapp.serviceAccountName" $root }}
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml $root.Values.podSecurityContext | nindent 8 }}
+      # Give in-flight requests (and long-lived websockets) time to drain.
+      terminationGracePeriodSeconds: 45
+      {{- include "streamingapp.topologySpread" (dict "root" $root "name" $name) | nindent 6 }}
+      {{- with $root.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- if and (ne $name "frontend") $root.Values.mongodb.enabled }}
+      initContainers:
+        # Block startup until the in-cluster MongoDB answers. Without this the
+        # Node services crash-loop for the first minute of a fresh install,
+        # which looks like a real failure in the rollout status.
+        # Skipped entirely when mongodb.externalUri points at DocumentDB or
+        # Atlas — that host is outside the cluster and this probe would hang.
+        - name: wait-for-mongo
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "waiting for {{ include "streamingapp.mongoHost" $root }}:27017 ..."
+              for i in $(seq 1 60); do
+                if nc -z {{ include "streamingapp.mongoHost" $root }} 27017; then
+                  echo "mongodb is up"; exit 0
+                fi
+                sleep 3
+              done
+              echo "timed out waiting for mongodb"; exit 1
+          securityContext:
+            {{- toYaml $root.Values.containerSecurityContext | nindent 12 }}
+            runAsUser: 10001
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits:   { cpu: 50m, memory: 64Mi }
+      {{- end }}
+
+      containers:
+        - name: {{ $name }}
+          image: {{ include "streamingapp.image" (dict "root" $root "svc" $svc) }}
+          imagePullPolicy: {{ $root.Values.global.image.pullPolicy }}
+          securityContext:
+            {{- toYaml $root.Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ $svc.containerPort }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ $svc.containerPort | quote }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef: { fieldPath: metadata.name }
+            - name: NODE_ENV
+              value: production
+            {{- if eq $name "frontend" }}
+            # nginx reverse-proxy upstreams, resolved via cluster DNS
+            - name: AUTH_UPSTREAM
+              value: "{{ $full }}-auth:{{ $root.Values.services.auth.servicePort }}"
+            - name: STREAMING_UPSTREAM
+              value: "{{ $full }}-streaming:{{ $root.Values.services.streaming.servicePort }}"
+            - name: ADMIN_UPSTREAM
+              value: "{{ $full }}-admin:{{ $root.Values.services.admin.servicePort }}"
+            - name: CHAT_UPSTREAM
+              value: "{{ $full }}-chat:{{ $root.Values.services.chat.servicePort }}"
+            {{- end }}
+            {{- with $svc.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if ne $name "frontend" }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "streamingapp.configMapName" $root }}
+            - secretRef:
+                name: {{ include "streamingapp.secretName" $root }}
+          {{- end }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+          # startup probe absorbs slow cold starts so liveness never fires early
+          startupProbe:
+            httpGet:
+              path: {{ $svc.healthPath }}
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: {{ $svc.healthPath }}
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: {{ $svc.healthPath }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              # Let the endpoint controller pull this pod out of the Service
+              # before the process starts shutting down — kills 502s on deploy.
+              exec:
+                command: ["sh", "-c", "sleep 10"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if eq $name "frontend" }}
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if eq $name "frontend" }}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+        {{- end }}
+{{- end }}
+{{- end }}

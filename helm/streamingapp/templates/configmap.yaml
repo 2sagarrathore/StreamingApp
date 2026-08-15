@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "streamingapp.configMapName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+data:
+  # Non-secret settings every backend service reads via envFrom.
+  # MONGO_URI deliberately lives in the Secret, not here — it embeds the
+  # database password, and ConfigMaps are readable by anything with basic
+  # namespace get access.
+  CLIENT_URLS: {{ .Values.config.clientUrls | quote }}
+  STREAMING_PUBLIC_URL: {{ .Values.config.streamingPublicUrl | quote }}
+  AWS_REGION: {{ .Values.global.awsRegion | quote }}
+  AWS_S3_BUCKET: {{ .Values.config.awsS3Bucket | quote }}
+  AWS_CDN_URL: {{ .Values.config.awsCdnUrl | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}

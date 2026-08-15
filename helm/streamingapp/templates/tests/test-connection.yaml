@@ -1,0 +1,45 @@
+{{- $root := . -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "streamingapp.fullname" . }}-smoke-test"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: smoke
+      image: curlimages/curl:8.10.1
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          set -e
+          fail=0
+          check() {
+            printf '  %-34s' "$1"
+            if curl -fsS --max-time 10 "$2" >/dev/null 2>&1; then
+              echo "OK"
+            else
+              echo "FAIL"; fail=1
+            fi
+          }
+          echo "Health checks:"
+          {{- range $name, $svc := .Values.services }}
+          {{- if $svc.enabled }}
+          check "{{ $name }}" "http://{{ include "streamingapp.componentName" (dict "root" $root "name" $name) }}:{{ $svc.servicePort }}{{ $svc.healthPath }}"
+          {{- end }}
+          {{- end }}
+          echo ""
+          echo "End-to-end through the frontend proxy:"
+          check "frontend -> auth"      "http://{{ include "streamingapp.fullname" . }}-frontend:{{ .Values.services.frontend.servicePort }}/svc/auth/health"
+          check "frontend -> streaming" "http://{{ include "streamingapp.fullname" . }}-frontend:{{ .Values.services.frontend.servicePort }}/svc/streaming/api/health"
+          check "frontend -> admin"     "http://{{ include "streamingapp.fullname" . }}-frontend:{{ .Values.services.frontend.servicePort }}/svc/admin/api/health"
+          check "frontend -> chat"      "http://{{ include "streamingapp.fullname" . }}-frontend:{{ .Values.services.frontend.servicePort }}/svc/chat/api/health"
+          check "SPA index"             "http://{{ include "streamingapp.fullname" . }}-frontend:{{ .Values.services.frontend.servicePort }}/"
+          echo ""
+          [ "$fail" -eq 0 ] && echo "all checks passed" || echo "one or more checks failed"
+          exit $fail

@@ -1,0 +1,65 @@
+
+  {{ .Chart.Name }} {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+  ---------------------------------------------------------------------------
+  1. Watch the rollout
+  ---------------------------------------------------------------------------
+     kubectl get pods -n {{ .Release.Namespace }} -w
+
+{{- if .Values.ingress.enabled }}
+
+  ---------------------------------------------------------------------------
+  2. Get the public URL (the ALB takes 2-4 minutes to provision)
+  ---------------------------------------------------------------------------
+{{- if .Values.ingress.host }}
+     {{ if .Values.ingress.certificateArn }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
+
+     Point a CNAME for {{ .Values.ingress.host }} at:
+       kubectl get ingress {{ include "streamingapp.fullname" . }} -n {{ .Release.Namespace }} \
+         -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+{{- else }}
+     kubectl get ingress {{ include "streamingapp.fullname" . }} -n {{ .Release.Namespace }} \
+       -o jsonpath='http://{.status.loadBalancer.ingress[0].hostname}{"\n"}'
+{{- end }}
+{{- else }}
+
+  ---------------------------------------------------------------------------
+  2. Ingress is disabled — port-forward instead
+  ---------------------------------------------------------------------------
+     kubectl port-forward -n {{ .Release.Namespace }} \
+       svc/{{ include "streamingapp.fullname" . }}-frontend 8080:{{ .Values.services.frontend.servicePort }}
+     open http://localhost:8080
+{{- end }}
+
+  ---------------------------------------------------------------------------
+  3. Verify each component answers its health check
+  ---------------------------------------------------------------------------
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+     kubectl exec -n {{ $.Release.Namespace }} deploy/{{ include "streamingapp.componentName" (dict "root" $ "name" $name) }} -- \
+       wget -qO- http://127.0.0.1:{{ $svc.containerPort }}{{ $svc.healthPath }}
+{{- end }}
+{{- end }}
+
+  ---------------------------------------------------------------------------
+  4. Autoscaling status
+  ---------------------------------------------------------------------------
+     kubectl get hpa -n {{ .Release.Namespace }}
+
+{{- if and .Values.secrets.create (eq .Values.secrets.jwtSecret "change-me-before-you-deploy") }}
+
+  ###########################################################################
+  #  WARNING: you are running with the default JWT secret. Every token this
+  #  cluster issues is forgeable. Redeploy with a real one:
+  #
+  #    helm upgrade {{ .Release.Name }} ... --set secrets.jwtSecret=$(openssl rand -hex 32)
+  ###########################################################################
+{{- end }}
+{{- if and .Values.mongodb.enabled (eq .Values.mongodb.auth.rootPassword "change-me-before-you-deploy") }}
+
+  ###########################################################################
+  #  WARNING: MongoDB is using the default root password. Redeploy with:
+  #
+  #    helm upgrade {{ .Release.Name }} ... --set mongodb.auth.rootPassword=$(openssl rand -hex 24)
+  ###########################################################################
+{{- end }}

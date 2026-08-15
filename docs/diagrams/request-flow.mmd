@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    actor U as Browser
+    participant ALB as ALB
+    participant NG as frontend pod<br/>(nginx)
+    participant AU as auth-service
+    participant ST as streaming-service
+    participant CH as chat-service
+    participant DB as MongoDB
+    participant S3 as S3
+
+    Note over U,NG: Everything is same-origin — nginx proxies /svc/* so there is no CORS
+
+    U->>ALB: GET /
+    ALB->>NG: GET / (target-type ip)
+    NG-->>U: index.html + hashed JS/CSS
+
+    U->>ALB: POST /svc/auth/api/login
+    ALB->>NG: proxy
+    NG->>AU: POST /api/login
+    AU->>DB: find user, verify bcrypt hash
+    DB-->>AU: user document
+    AU-->>NG: 200 + JWT
+    NG-->>U: 200 + JWT
+
+    U->>ALB: GET /svc/streaming/api/streaming/videos
+    ALB->>NG: proxy
+    NG->>ST: GET /api/streaming/videos
+    ST->>DB: query catalogue
+    ST->>S3: presign GET for each media key
+    S3-->>ST: signed URLs
+    ST-->>U: catalogue + signed URLs
+
+    U->>S3: GET signed URL (direct, bypasses the cluster)
+    S3-->>U: video bytes
+
+    U->>ALB: WebSocket upgrade /socket.io/
+    ALB->>NG: upgrade (idle_timeout 3600s)
+    NG->>CH: upgrade (proxy_read_timeout 3600s)
+    CH->>CH: verify JWT on handshake
+    CH-->>U: connected
+    U->>CH: chat:message
+    CH->>DB: persist message
+    CH-->>U: broadcast to room

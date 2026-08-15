@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Extra Fluent Bit parsers for the StreamingApp containers.
+#
+# The Node services log through morgan/console, so most lines are plain text,
+# but errors are emitted as JSON. These parsers promote the JSON ones into
+# structured CloudWatch fields, which is what makes Logs Insights queries like
+#
+#   fields @timestamp, kubernetes.container_name, level, msg
+#   | filter level = "error"
+#   | sort @timestamp desc
+#
+# actually work instead of forcing a regex over @message.
+#
+# Applied by monitoring/setup-monitoring.sh on top of the managed addon.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-streamingapp-parsers
+  namespace: amazon-cloudwatch
+  labels:
+    app.kubernetes.io/part-of: streamingapp
+data:
+  parsers.conf: |
+    [PARSER]
+        Name        streamingapp_json
+        Format      json
+        Time_Key    timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S.%LZ
+        Time_Keep   On
+
+    # morgan 'dev' format: GET /api/health 200 3.421 ms - 45
+    [PARSER]
+        Name        streamingapp_morgan
+        Format      regex
+        Regex       ^(?<method>[A-Z]+) (?<path>[^ ]+) (?<status>\d{3}) (?<latency_ms>[\d.]+) ms
+        Types       status:integer latency_ms:float
+
+    # Node stack traces: keep the first line as the message, the rest as trace
+    [PARSER]
+        Name        streamingapp_stacktrace
+        Format      regex
+        Regex       ^(?<error_type>[A-Za-z]*Error): (?<message>.*)$
+
+  filters.conf: |
+    # Try JSON first; fall back to the access-log shape; leave anything else alone.
+    [FILTER]
+        Name                parser
+        Match               application.*streamingapp*
+        Key_Name            log
+        Parser              streamingapp_json
+        Reserve_Data        On
+        Preserve_Key        On
+
+    [FILTER]
+        Name                parser
+        Match               application.*streamingapp*
+        Key_Name            log
+        Parser              streamingapp_morgan
+        Reserve_Data        On
+        Preserve_Key        On
+
+    # Tag every record with the component so one Logs Insights query can group
+    # by service without parsing the pod name.
+    [FILTER]
+        Name                record_modifier
+        Match               application.*streamingapp*
+        Record              platform streamingapp

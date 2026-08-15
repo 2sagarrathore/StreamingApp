@@ -1,8 +1,12 @@
 node_modules
 npm-debug.log
 .env
-*.log
+.env.*
+!.env.example
+.git
+.gitignore
+Dockerfile
+.dockerignore
 coverage
-logs
-videos
-controllers/*.mp4
+*.md
+.DS_Store

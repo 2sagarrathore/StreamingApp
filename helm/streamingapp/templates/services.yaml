@@ -1,0 +1,29 @@
+{{- $root := . -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamingapp.componentName" (dict "root" $root "name" $name) }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+  {{- if $svc.isIngressTarget }}
+  annotations:
+    # The ALB registers pod IPs directly (target-type: ip), so it needs the
+    # Service to publish its endpoints even while a pod is still warming up.
+    alb.ingress.kubernetes.io/healthcheck-path: {{ $svc.healthPath | quote }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ $svc.servicePort }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "streamingapp.selectorLabels" (dict "root" $root "name" $name) | nindent 4 }}
+{{- end }}
+{{- end }}

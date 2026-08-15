@@ -1,0 +1,90 @@
+graph TB
+    USER["End users<br/>browser"]
+    DEVELOPER["Developer"]
+    GITHUB["GitHub<br/>forked repo"]
+
+    subgraph AWS["AWS Account — ap-south-1"]
+
+        subgraph CICD["CI / CD"]
+            direction TB
+            JENKINS["Jenkins on EC2<br/>t3.medium<br/>docker · helm · kubectl"]
+            ECR["Amazon ECR<br/>5 repositories<br/>scan-on-push · lifecycle policy"]
+            JENKINS -->|build + push 5 images| ECR
+        end
+
+        subgraph VPC["VPC 10.42.0.0/16 — 2 Availability Zones"]
+
+            ALB["Application Load Balancer<br/>public subnets<br/>target-type: ip"]
+
+            subgraph EKS["EKS cluster — streamingapp-eks (private subnets)"]
+
+                subgraph NS["namespace: streamingapp"]
+                    direction TB
+                    FE["<b>frontend</b><br/>React SPA + nginx reverse proxy<br/>:8080 · HPA 3-12"]
+
+                    AUTH["<b>auth</b><br/>:3001 · HPA 3-12"]
+                    STREAM["<b>streaming</b><br/>:3002 · HPA 3-20"]
+                    ADMIN["<b>admin</b><br/>:3003"]
+                    CHAT["<b>chat</b><br/>:3004 · Socket.IO"]
+
+                    MONGO[("MongoDB StatefulSet<br/>gp3 EBS · encrypted")]
+                end
+
+                subgraph PLATFORM["platform add-ons"]
+                    direction LR
+                    ALBC["AWS Load Balancer<br/>Controller"]
+                    METRICS["metrics-server<br/>→ HPAs"]
+                    CA["Cluster Autoscaler<br/>→ node group"]
+                    CWA["CloudWatch Agent<br/>+ Fluent Bit"]
+                end
+            end
+        end
+
+        S3[("S3 media bucket<br/>SSE-AES256 · IRSA access")]
+
+        subgraph OBS["Observability & ChatOps"]
+            direction LR
+            CW["CloudWatch<br/>Metrics · Logs<br/>Alarms · Dashboard"]
+            SNS["SNS<br/>deployments<br/>alarms"]
+            LAMBDA["Lambda<br/>slack-notifier"]
+            CW -->|alarm state change| SNS --> LAMBDA
+        end
+    end
+
+    SLACK["Slack #deployments"]
+
+    DEVELOPER -->|git push| GITHUB -->|webhook| JENKINS
+    JENKINS -->|helm upgrade --atomic| NS
+    JENKINS -->|build result| SNS
+    ECR -.->|image pull| NS
+
+    USER -->|HTTPS| ALB --> FE
+    FE -->|/svc/auth| AUTH
+    FE -->|/svc/streaming| STREAM
+    FE -->|/svc/admin| ADMIN
+    FE -->|/svc/chat · /socket.io| CHAT
+
+    AUTH --> MONGO
+    STREAM --> MONGO
+    ADMIN --> MONGO
+    CHAT --> MONGO
+
+    STREAM -->|presigned URLs| S3
+    ADMIN -->|uploads| S3
+    USER -.->|direct media fetch| S3
+
+    ALBC -.->|provisions| ALB
+    CWA -->|metrics + logs| CW
+    LAMBDA --> SLACK
+
+    classDef aws  fill:#ff9900,stroke:#232f3e,color:#232f3e,stroke-width:1.5px
+    classDef k8s  fill:#326ce5,stroke:#1a3f8f,color:#ffffff,stroke-width:1.5px
+    classDef plat fill:#7c9fe8,stroke:#1a3f8f,color:#10203f,stroke-width:1px
+    classDef ext  fill:#4a154b,stroke:#2d0d2e,color:#ffffff,stroke-width:1.5px
+    classDef db   fill:#13aa52,stroke:#0a6e35,color:#ffffff,stroke-width:1.5px
+
+    class ALB,ECR,S3,CW,SNS,LAMBDA,JENKINS aws
+    class FE,AUTH,STREAM,ADMIN,CHAT k8s
+    class ALBC,METRICS,CA,CWA plat
+    class SLACK,GITHUB,DEVELOPER,USER ext
+    class MONGO db

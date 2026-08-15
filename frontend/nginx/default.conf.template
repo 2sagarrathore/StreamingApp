@@ -1,0 +1,99 @@
+# ---------------------------------------------------------------------------
+# StreamFlix frontend edge config.
+#
+# The React SPA is served from / and nginx also acts as a same-origin reverse
+# proxy for the four backend microservices. Doing it this way means:
+#   * the browser only ever talks to ONE origin, so there is no CORS surface,
+#   * only the frontend Service needs to sit behind the ALB Ingress,
+#   * the React build is environment-agnostic (all REACT_APP_* URLs are
+#     relative paths, so the same image promotes from dev -> prod unchanged).
+#
+# Placeholders below are substituted at container start by the stock nginx
+# entrypoint (envsubst over /etc/nginx/templates/*.template).
+# ---------------------------------------------------------------------------
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen       8080;
+    server_name  _;
+
+    root  /usr/share/nginx/html;
+    index index.html;
+
+    # ---- hardening ----------------------------------------------------
+    server_tokens off;
+    add_header X-Content-Type-Options "nosniff"      always;
+    add_header X-Frame-Options        "SAMEORIGIN"   always;
+    add_header Referrer-Policy        "strict-origin-when-cross-origin" always;
+
+    client_max_body_size ${MAX_UPLOAD_SIZE};
+
+    # ---- liveness/readiness endpoint for Kubernetes & the ALB ----------
+    location = /healthz {
+        access_log off;
+        add_header Content-Type application/json;
+        return 200 '{"status":"ok","component":"frontend"}';
+    }
+
+    # ---- static assets: long cache, they are content-hashed by CRA -----
+    location /static/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # ---- microservice reverse proxies ---------------------------------
+    # The trailing slash on both sides strips the /svc/<name> prefix, so
+    # /svc/auth/api/login  ->  http://<auth>/api/login
+    location /svc/auth/ {
+        proxy_pass http://${AUTH_UPSTREAM}/;
+        include /etc/nginx/proxy-common.conf;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+    }
+
+    location /svc/streaming/ {
+        proxy_pass http://${STREAMING_UPSTREAM}/;
+        include /etc/nginx/proxy-common.conf;
+        # video responses can be large; do not buffer them to disk
+        proxy_buffering off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    location /svc/admin/ {
+        proxy_pass http://${ADMIN_UPSTREAM}/;
+        include /etc/nginx/proxy-common.conf;
+        # admin uploads multipart video files
+        proxy_request_buffering off;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location /svc/chat/ {
+        proxy_pass http://${CHAT_UPSTREAM}/;
+        include /etc/nginx/proxy-common.conf;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+    }
+
+    # ---- Socket.IO (websocket upgrade) --------------------------------
+    location /socket.io/ {
+        proxy_pass http://${CHAT_UPSTREAM}/socket.io/;
+        include /etc/nginx/proxy-common.conf;
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        # Must exceed the ALB's idle_timeout (3600s) or nginx drops the socket first
+        proxy_read_timeout  3600s;
+        proxy_send_timeout  3600s;
+    }
+
+    # ---- SPA fallback: every other path renders the React router -------
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

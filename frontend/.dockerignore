@@ -1,5 +1,12 @@
 node_modules
 build
+.env
+.env.*
+!.env.example
 npm-debug.log
-*.log
+.git
+.gitignore
+Dockerfile
+.dockerignore
 coverage
+.DS_Store

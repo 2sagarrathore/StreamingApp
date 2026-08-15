@@ -1,0 +1,37 @@
+# Plugins the StreamingApp pipeline depends on.
+# Install via Manage Jenkins > Plugins > Available, or in bulk with the CLI:
+#
+#   jenkins-plugin-cli --plugin-file jenkins/plugins.txt
+#
+# --- pipeline core ---------------------------------------------------------
+workflow-aggregator          # Pipeline (declarative + scripted)
+pipeline-stage-view          # the stage-by-stage visualisation
+pipeline-utility-steps       # readJSON / writeFile / zip helpers
+
+# --- source control --------------------------------------------------------
+git
+github
+github-branch-source         # Multibranch Pipeline from a GitHub org/repo
+generic-webhook-trigger      # useful when githubPush() cannot be used
+
+# --- build environment -----------------------------------------------------
+docker-workflow              # docker.build / withRegistry
+timestamper                  # the timestamps() option in the Jenkinsfile
+ansicolor                    # the ansiColor('xterm') option
+ws-cleanup                   # the cleanWs() post step
+build-timeout
+
+# --- credentials -----------------------------------------------------------
+credentials-binding
+plain-credentials
+aws-credentials              # only needed if you use access keys instead of
+                             # an EC2 instance profile
+
+# --- AWS / Kubernetes ------------------------------------------------------
+amazon-ecr                   # ECR token refresh for docker-workflow
+kubernetes-cli               # optional: withKubeConfig {} step
+pipeline-aws                 # optional: withAWS {} step
+
+# --- reporting -------------------------------------------------------------
+junit
+warnings-ng                  # optional: ingest the trivy/hadolint reports

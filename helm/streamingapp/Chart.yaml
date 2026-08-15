@@ -1,0 +1,19 @@
+apiVersion: v2
+name: streamingapp
+description: |
+  StreamFlix — a MERN microservice video streaming platform (React SPA,
+  auth / streaming / admin / chat Node services, and MongoDB) packaged for
+  Amazon EKS with an ALB Ingress, HorizontalPodAutoscalers and IRSA.
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - mern
+  - microservices
+  - streaming
+  - eks
+home: https://github.com/UnpredictablePrashant/StreamingApp
+maintainers:
+  - name: Sagar Rathore
+annotations:
+  category: Video

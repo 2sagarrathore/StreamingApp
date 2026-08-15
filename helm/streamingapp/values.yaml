@@ -1,0 +1,245 @@
+# ===========================================================================
+# Default values for the streamingapp chart.
+#
+# Only three things normally need changing per environment:
+#   1. global.image.registry  -> your ECR registry URI
+#   2. global.image.tag       -> the tag Jenkins just pushed
+#   3. ingress.host           -> your DNS name (leave empty to use the raw ALB)
+#
+# Everything else has a working default. See values-prod.yaml for the
+# production overlay.
+# ===========================================================================
+
+global:
+  # Set by Jenkins: --set global.image.registry=<acct>.dkr.ecr.<region>.amazonaws.com
+  image:
+    registry: ""
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  # AWS region the pods run in (used for the SDK and for presigned S3 URLs)
+  awsRegion: ap-south-1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------------------
+# Service account. When irsa.roleArn is set, pods assume that IAM role and no
+# static AWS keys are needed anywhere in the stack (created by eksctl —
+# see infra/eksctl-cluster.yaml).
+# ---------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  name: streamingapp-app
+  annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/eksctl-...
+
+# ---------------------------------------------------------------------------
+# Application configuration shared by every backend service.
+# Rendered into a single ConfigMap and mounted with envFrom.
+# ---------------------------------------------------------------------------
+config:
+  # Comma-separated CORS allow-list. Leave empty to accept any origin, which
+  # is safe here because nginx proxies everything same-origin anyway.
+  clientUrls: ""
+  # Public base URL the streaming service advertises for media links.
+  # Empty => same-origin path served through the frontend proxy.
+  streamingPublicUrl: "/svc/streaming"
+  awsS3Bucket: ""
+  awsCdnUrl: ""
+  logLevel: info
+
+# ---------------------------------------------------------------------------
+# Secrets. For a graded/demo deploy the chart can generate the Secret itself.
+# For anything real, set create=false and point existingSecret at a Secret
+# managed by External Secrets Operator or the AWS Secrets Manager CSI driver.
+# ---------------------------------------------------------------------------
+secrets:
+  create: true
+  # If you point at an existing Secret, it MUST contain these keys:
+  #   MONGO_URI, JWT_SECRET
+  # and optionally AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
+  existingSecret: ""
+  # Override on the CLI: --set secrets.jwtSecret=$(openssl rand -hex 32)
+  jwtSecret: "change-me-before-you-deploy"
+  # Static AWS keys are only a fallback for when IRSA is unavailable.
+  awsAccessKeyId: ""
+  awsSecretAccessKey: ""
+
+# ---------------------------------------------------------------------------
+# The five workloads. Each entry renders a Deployment + Service (+ optional
+# HPA and PodDisruptionBudget) from the same templates.
+# ---------------------------------------------------------------------------
+services:
+
+  frontend:
+    enabled: true
+    repository: streamingapp/frontend
+    replicaCount: 2
+    containerPort: 8080
+    servicePort: 80
+    healthPath: /healthz
+    # The SPA is the only workload the ALB routes to; it reverse-proxies the rest.
+    isIngressTarget: true
+    resources:
+      requests: { cpu: 50m,  memory: 64Mi }
+      limits:   { cpu: 300m, memory: 256Mi }
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+    env:
+      # Upstreams for the bundled nginx proxy — resolved as in-cluster Services.
+      - name: MAX_UPLOAD_SIZE
+        value: "1024m"
+
+  auth:
+    enabled: true
+    repository: streamingapp/auth-service
+    replicaCount: 2
+    containerPort: 3001
+    servicePort: 3001
+    healthPath: /health
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  streaming:
+    enabled: true
+    repository: streamingapp/streaming-service
+    replicaCount: 2
+    containerPort: 3002
+    servicePort: 3002
+    healthPath: /api/health
+    resources:
+      requests: { cpu: 150m, memory: 192Mi }
+      limits:   { cpu: 800m, memory: 768Mi }
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 65
+      targetMemoryUtilizationPercentage: 80
+
+  admin:
+    enabled: true
+    repository: streamingapp/admin-service
+    replicaCount: 1
+    containerPort: 3003
+    servicePort: 3003
+    healthPath: /api/health
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+    autoscaling:
+      enabled: false          # admin traffic is a handful of operators
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 75
+
+  chat:
+    enabled: true
+    repository: streamingapp/chat-service
+    # NOTE: deliberately 1 replica. Socket.IO holds long-lived connections and
+    # broadcasts through an in-process room registry, so a second replica would
+    # silently drop messages between users on different pods. To scale this
+    # out, add @socket.io/redis-adapter with an ElastiCache Redis backend and
+    # then raise replicaCount / enable the HPA below.
+    replicaCount: 1
+    containerPort: 3004
+    servicePort: 3004
+    healthPath: /api/health
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+
+# ---------------------------------------------------------------------------
+# MongoDB as an in-cluster StatefulSet backed by an encrypted gp3 EBS volume.
+# Set enabled=false and fill externalUri to point at DocumentDB or Atlas.
+# ---------------------------------------------------------------------------
+mongodb:
+  enabled: true
+  externalUri: ""             # e.g. mongodb://user:pass@docdb-host:27017/streamingapp?tls=true
+  image:
+    repository: mongo
+    tag: "6.0"
+    pullPolicy: IfNotPresent
+  database: streamingapp
+  auth:
+    enabled: true
+    rootUsername: streamflix
+    # Override on the CLI: --set mongodb.auth.rootPassword=$(openssl rand -hex 24)
+    rootPassword: "change-me-before-you-deploy"
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 20Gi
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits:   { cpu: 1000m, memory: 2Gi }
+
+# ---------------------------------------------------------------------------
+# ALB Ingress (AWS Load Balancer Controller must be installed — see
+# infra/scripts/40-cluster-addons.sh).
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: alb
+  # Leave empty to reach the app on the raw ALB DNS name.
+  host: ""
+  # Set to an ACM certificate ARN to serve HTTPS and redirect port 80 -> 443.
+  certificateArn: ""
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=3600
+    alb.ingress.kubernetes.io/tags: Project=streamingapp
+
+# ---------------------------------------------------------------------------
+# Cross-cutting pod settings
+# ---------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: ["ALL"]
+
+# Spread replicas across AZs so a zone failure cannot take the whole tier out.
+topologySpreadEnabled: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+imagePullSecrets: []
+podAnnotations: {}
+podLabels: {}
+
+# Restrict pod-to-pod traffic to what the app actually needs.
+networkPolicy:
+  enabled: false

@@ -1,0 +1,131 @@
+{{- if .Values.mongodb.enabled }}
+{{- $mongoName := include "streamingapp.mongoHost" . }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $mongoName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+type: Opaque
+stringData:
+  MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongodb.auth.rootUsername | quote }}
+  MONGO_INITDB_ROOT_PASSWORD: {{ required "mongodb.auth.rootPassword is required" .Values.mongodb.auth.rootPassword | quote }}
+---
+# Headless Service gives the StatefulSet pod a stable DNS name, and doubles as
+# the ClusterIP the application connects to (single replica).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $mongoName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  clusterIP: None
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: mongodb
+  selector:
+    {{- include "streamingapp.selectorLabels" (dict "root" . "name" "mongodb") | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $mongoName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  serviceName: {{ $mongoName }}
+  # Single replica by design. This is the documented trade-off for a project
+  # deployment: cheap and self-contained, but not highly available. For
+  # production, disable this block and point mongodb.externalUri at Amazon
+  # DocumentDB (multi-AZ, managed backups) — see docs/ARCHITECTURE.md.
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" (dict "root" . "name" "mongodb") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamingapp.labels" . | nindent 8 }}
+        app.kubernetes.io/component: mongodb
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: mongodb
+          image: "{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}"
+          imagePullPolicy: {{ .Values.mongodb.image.pullPolicy }}
+          args:
+            - --bind_ip_all
+            # Cap the cache so the container stays inside its memory limit;
+            # WiredTiger otherwise sizes itself from the host's total RAM and
+            # gets OOMKilled on a small node.
+            - --wiredTigerCacheSizeGB
+            - "0.5"
+          ports:
+            - name: mongodb
+              containerPort: 27017
+          {{- if .Values.mongodb.auth.enabled }}
+          envFrom:
+            - secretRef:
+                name: {{ $mongoName }}
+          {{- end }}
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: {{ .Values.mongodb.database | quote }}
+          resources:
+            {{- toYaml .Values.mongodb.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            periodSeconds: 20
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            periodSeconds: 10
+            timeoutSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      {{- if not .Values.mongodb.persistence.enabled }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if .Values.mongodb.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          {{- include "streamingapp.labels" . | nindent 10 }}
+          app.kubernetes.io/component: mongodb
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.mongodb.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.persistence.size }}
+  {{- end }}
+{{- end }}
