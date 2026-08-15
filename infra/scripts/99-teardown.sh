@@ -77,14 +77,35 @@ log "Deleting EKS cluster — 10-15 minutes"
 eksctl delete cluster --name "${CLUSTER_NAME}" --region "${AWS_REGION}" --wait || \
   warn "cluster delete reported an error — check the CloudFormation console for stuck stacks"
 
-# 6. Registries
+# 6. Volumes the cluster left behind. The gp3 StorageClass uses
+#    reclaimPolicy: Retain so a redeploy never destroys the database, which
+#    also means deleting the cluster orphans the MongoDB volume rather than
+#    removing it. An unattached 20GiB gp3 volume is about $1.60 a month and
+#    nothing in the console links it back to a cluster that no longer exists,
+#    so it bills quietly forever. Delete only volumes still tagged as owned by
+#    this cluster and only while they are unattached.
+log "Removing EBS volumes orphaned by the cluster"
+ORPHANS="$(aws ec2 describe-volumes --region "${AWS_REGION}" \
+  --filters "Name=tag:kubernetes.io/cluster/${CLUSTER_NAME},Values=owned" \
+            "Name=status,Values=available" \
+  --query 'Volumes[].VolumeId' --output text 2>/dev/null || true)"
+if [[ -n "${ORPHANS}" ]]; then
+  for vol in ${ORPHANS}; do
+    aws ec2 delete-volume --volume-id "${vol}" --region "${AWS_REGION}" 2>/dev/null \
+      && ok "deleted ${vol}" || warn "could not delete ${vol}"
+  done
+else
+  ok "no orphaned volumes"
+fi
+
+# 7. Registries
 for repo in "${ECR_REPOS[@]}"; do
   log "Deleting ECR repository ${repo}"
   aws ecr delete-repository --repository-name "${repo}" --region "${AWS_REGION}" --force >/dev/null 2>&1 \
     || warn "could not delete ${repo}"
 done
 
-# 7. ChatOps
+# 8. ChatOps
 for topic in "${SNS_TOPIC_DEPLOY}" "${SNS_TOPIC_ALARMS}"; do
   ARN="arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:${topic}"
   aws sns delete-topic --topic-arn "${ARN}" --region "${AWS_REGION}" 2>/dev/null \
