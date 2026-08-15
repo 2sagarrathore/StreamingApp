@@ -10,6 +10,26 @@ a video streaming platform with a React SPA and four Node microservices
 
 ---
 
+## Status — deployed and verified
+
+This was deployed to a live AWS account on **15 August 2026** (ap-south-1,
+Kubernetes 1.32, three t3.medium nodes) and torn down the same day. Nine pods
+served traffic through an internet-facing ALB; every endpoint returned 200, a
+deleted pod was rescheduled in 32 seconds, and the auth HPA scaled 2 → 4
+replicas under load.
+
+The real command output is in [`docs/evidence/`](docs/evidence/) and the console
+captures are in [`docs/screenshots/`](docs/screenshots/). The full record,
+including what did *not* work, is [docs/EVIDENCE.md](docs/EVIDENCE.md).
+
+**One gap, stated plainly:** the Jenkins pipeline never executed. The controller
+was provisioned and running, but plugin installation did not complete, so no
+build ran. Step 4 is evidenced by the `Jenkinsfile` and the provisioning
+automation in `jenkins/`, not by a live build —
+[`docs/evidence/11-jenkins.txt`](docs/evidence/11-jenkins.txt) has the detail.
+
+---
+
 ## Architecture
 
 ![Architecture](docs/diagrams/architecture.png)
@@ -59,7 +79,7 @@ The reasoning is written up in
 ├── monitoring/
 │   ├── setup-monitoring.sh        # Container Insights + Fluent Bit + retention
 │   ├── create-dashboard.sh        # 10-widget CloudWatch dashboard
-│   ├── create-alarms.sh           # 21+ alarms → SNS
+│   ├── create-alarms.sh           # 24 alarms → SNS
 │   └── fluent-bit-custom.yaml     # structured-log parsers
 │
 ├── chatops/
@@ -69,11 +89,11 @@ The reasoning is written up in
 └── docs/
     ├── ARCHITECTURE.md            # design, trade-offs, security, cost
     ├── DEPLOYMENT.md              # step-by-step runbook + troubleshooting
-    ├── EVIDENCE.md                # Step 8 validation record
-    ├── evidence/                  # command output, written by run-project.sh
+    ├── EVIDENCE.md                # Step 8 validation record — filled in
+    ├── evidence/                  # real command output from the verified run
     ├── APPLICATION.md             # the original app README
     ├── diagrams/                  # mermaid sources + rendered PNG/SVG
-    └── screenshots/               # your deployment evidence goes here
+    └── screenshots/               # 17 console captures from the verified run
 ```
 
 ---
@@ -126,8 +146,8 @@ docker compose up --build      # http://localhost:3000
 | 4 | Pipeline builds and pushes to ECR | `Jenkinsfile` — 5 parallel builds |
 | 4 | Auto-trigger on commit | `githubPush()` webhook + `pollSCM` fallback |
 | 5 | EKS cluster via eksctl | `infra/eksctl-cluster.yaml` + `30-create-eks.sh` |
-| 5 | Deploy via Helm | `helm/streamingapp/` — 31 objects from one chart |
-| 6 | CloudWatch metrics and alarms | `monitoring/create-alarms.sh` — 21+ alarms; `create-dashboard.sh` |
+| 5 | Deploy via Helm | `helm/streamingapp/` — 25 objects from one chart |
+| 6 | CloudWatch metrics and alarms | `monitoring/create-alarms.sh` — 24 alarms; `create-dashboard.sh` |
 | 6 | Centralised logging | Fluent Bit → CloudWatch Logs, custom parsers, 30-day retention |
 | 7 | Architecture + deployment docs, diagrams | `docs/` — three rendered diagrams, full runbook |
 | 8 | Final validation | [docs/DEPLOYMENT.md §11](docs/DEPLOYMENT.md#step-11--validate) — automated by `run-project.sh`; record in [docs/EVIDENCE.md](docs/EVIDENCE.md) |
@@ -168,15 +188,30 @@ explained in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md):
 Running 24/7 this stack costs roughly **$270/month** in ap-south-1 (EKS control
 plane $73, nodes $90, NAT $35, ALB $20, Jenkins $30, storage and the rest).
 
+Measured in practice: the verified run above cost about **$1** for roughly two
+and a half hours, at ~$0.19/hour for three nodes, the control plane, one NAT
+gateway and an ALB.
+
 Take your screenshots, then run `./infra/scripts/99-teardown.sh`. An idle
 cluster bills identically to a busy one.
+
+Check afterwards that it really is all gone. `reclaimPolicy: Retain` on the gp3
+StorageClass means deleting the cluster *orphans* the MongoDB volume rather than
+removing it — two 20 GiB volumes survived the first teardown of this project and
+would have billed indefinitely. Teardown now sweeps them up, but the habit of
+verifying is worth keeping:
+
+```bash
+aws ec2 describe-volumes --region ap-south-1 --query 'length(Volumes)'
+aws eks list-clusters --region ap-south-1
+```
 
 ---
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — components, network topology, security, scaling, trade-offs, cost
-- [Validation record](docs/EVIDENCE.md) — Step 8 verification, mostly filled in by `run-project.sh`
+- [Validation record](docs/EVIDENCE.md) — Step 8 verification against a real deployment, including what failed
 - [Deployment runbook](docs/DEPLOYMENT.md) — 12 steps, validation, troubleshooting table
 - [Jenkins setup](jenkins/README.md) — controller, credentials, job, webhook
 - [Monitoring](monitoring/README.md) — what is collected, Logs Insights queries, verification

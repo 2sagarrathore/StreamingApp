@@ -228,7 +228,7 @@ directly.
 **Derived metrics** — log metric filters turn error lines into the graphable
 `ApplicationErrors` and `DatabaseConnectionErrors` metrics.
 
-**Alarms** — 21+ alarms across cluster capacity, per-service restarts and
+**Alarms** — 24 alarms across cluster capacity, per-service restarts and
 resource use, application error rate, and ALB 5xx/latency/unhealthy targets.
 
 **Dashboard** — one `streamingapp-overview` dashboard with ten widgets,

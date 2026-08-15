@@ -196,7 +196,7 @@ health checks. `curl` returning 503 during that window is expected.
 ```
 
 Container Insights, Fluent Bit, log retention, metric filters, the dashboard,
-and 21+ alarms.
+and 24 alarms.
 
 Metrics take 5–10 minutes to start appearing.
 
@@ -318,6 +318,27 @@ teardown and keep billing quietly.
 | `helm upgrade` hangs then rolls back | A pod never became ready | `kubectl get events -n streamingapp --sort-by=.lastTimestamp` |
 | PVC `Pending` | No default StorageClass | Re-run `40-cluster-addons.sh` |
 | Chat messages not broadcasting | More than one chat replica | See [ARCHITECTURE.md §6](ARCHITECTURE.md#6-the-chat-service-runs-one-replica--on-purpose). Keep it at 1 |
+
+### Failures hit during the real deployment
+
+Every row below actually happened while deploying this project on 15 Aug 2026.
+All are fixed in the repository; they are recorded because the error messages
+are misleading enough to cost an afternoon if you meet them cold.
+
+| Symptom | Real cause |
+|---|---|
+| `eksctl` fails instantly: `unknown field "cloudWatch"` | `wellKnownPolicies.cloudWatch` does not exist under `iam.serviceAccounts[]`. That key only exists under a nodegroup's `withAddonPolicies`. Attach `CloudWatchAgentServerPolicy` by ARN instead |
+| `invalid version, 1.30 is no longer supported` | EKS retires minor versions on a rolling schedule. Check `aws eks describe-cluster-versions` before pinning |
+| `another operation (install/upgrade/rollback) is in progress` | A previous run was killed mid-deploy. Helm's `pending-*` marker survives with nothing behind it. `60-deploy.sh` now clears the stale lock |
+| Every service dies on `AuthenticationFailed` after a redeploy | `helm uninstall` removed the mongo Secret so a new password was minted, but the StatefulSet's PVC survived (`reclaimPolicy: Retain`) still holding the old one. Mongo only creates its root user against an empty data directory |
+| admin pod `CrashLoopBackOff`, `EACCES … mkdir '/app/tmp-uploads'` | The service creates its multer scratch directory at module load, but runs as UID 10001 against a root-owned image. Mount an `emptyDir` there — `fsGroup` makes it group-writable |
+| Ingress created but no ALB ever appears | A folded YAML scalar (`>-`) in the `load-balancer-attributes` annotation joins lines with spaces, so the controller sends ` routing.http2.enabled` to the ELB API and it is rejected as unknown. Keep that annotation on one line |
+| `helm test` reports failure for a test that passed | `hook-delete-policy: hook-succeeded` deletes the pod before `--logs` can read it |
+| Zero alarms created, monitoring otherwise fine | CloudWatch rejects `put-metric-alarm` when `--alarm-actions` names a topic that does not exist. The SNS topics must be created first — `run-project.sh` now runs ChatOps before monitoring |
+| `Bus error (core dumped)` running kubectl | A truncated download. CloudShell's proxy fails with `HTTP/2 stream not closed cleanly: PROTOCOL_ERROR`; verify checksums and use `--http1.1` |
+| Jenkins EC2: cloud-init "finished" in 41s with nothing installed | `dnf install curl` conflicts with AL2023's preinstalled `curl-minimal` and aborts the whole transaction |
+| `jenkins.service` fails, five restarts, then gives up | Current Jenkins LTS requires Java 21. Installing Java 17 leaves it unable to start |
+| Orphaned EBS volumes after teardown | `reclaimPolicy: Retain` protects data across redeploys and therefore strands the volume when the cluster is deleted |
 
 ### Diagnostic one-liners
 
