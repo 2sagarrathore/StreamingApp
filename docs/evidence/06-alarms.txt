@@ -1,0 +1,32 @@
+$ aws cloudwatch describe-alarms --region ap-south-1 --alarm-name-prefix streamingapp- --query MetricAlarms[].{Alarm:AlarmName,State:StateValue,Metric:MetricName} --output table
+
+--------------------------------------------------------------------------------------------------
+|                                         DescribeAlarms                                         |
++--------------------------------------+------------------------------------+--------------------+
+|                 Alarm                |              Metric                |       State        |
++--------------------------------------+------------------------------------+--------------------+
+|  streamingapp-admin-cpu-high         |  pod_cpu_utilization               |  INSUFFICIENT_DATA |
+|  streamingapp-admin-memory-high      |  pod_memory_utilization            |  INSUFFICIENT_DATA |
+|  streamingapp-admin-pod-restarts     |  pod_number_of_container_restarts  |  INSUFFICIENT_DATA |
+|  streamingapp-alb-5xx                |  HTTPCode_ELB_5XX_Count            |  INSUFFICIENT_DATA |
+|  streamingapp-alb-target-latency     |  TargetResponseTime                |  INSUFFICIENT_DATA |
+|  streamingapp-alb-unhealthy-hosts    |  UnHealthyHostCount                |  INSUFFICIENT_DATA |
+|  streamingapp-application-errors     |  ApplicationErrors                 |  INSUFFICIENT_DATA |
+|  streamingapp-auth-cpu-high          |  pod_cpu_utilization               |  INSUFFICIENT_DATA |
+|  streamingapp-auth-memory-high       |  pod_memory_utilization            |  INSUFFICIENT_DATA |
+|  streamingapp-auth-pod-restarts      |  pod_number_of_container_restarts  |  INSUFFICIENT_DATA |
+|  streamingapp-chat-cpu-high          |  pod_cpu_utilization               |  INSUFFICIENT_DATA |
+|  streamingapp-chat-memory-high       |  pod_memory_utilization            |  INSUFFICIENT_DATA |
+|  streamingapp-chat-pod-restarts      |  pod_number_of_container_restarts  |  INSUFFICIENT_DATA |
+|  streamingapp-cluster-cpu-high       |  node_cpu_utilization              |  INSUFFICIENT_DATA |
+|  streamingapp-cluster-failed-nodes   |  cluster_failed_node_count         |  INSUFFICIENT_DATA |
+|  streamingapp-cluster-memory-high    |  node_memory_utilization           |  INSUFFICIENT_DATA |
+|  streamingapp-database-errors        |  DatabaseConnectionErrors          |  INSUFFICIENT_DATA |
+|  streamingapp-frontend-cpu-high      |  pod_cpu_utilization               |  INSUFFICIENT_DATA |
+|  streamingapp-frontend-memory-high   |  pod_memory_utilization            |  INSUFFICIENT_DATA |
+|  streamingapp-frontend-pod-restarts  |  pod_number_of_container_restarts  |  INSUFFICIENT_DATA |
+|  streamingapp-node-disk-high         |  node_filesystem_utilization       |  INSUFFICIENT_DATA |
+|  streamingapp-streaming-cpu-high     |  pod_cpu_utilization               |  INSUFFICIENT_DATA |
+|  streamingapp-streaming-memory-high  |  pod_memory_utilization            |  INSUFFICIENT_DATA |
+|  streamingapp-streaming-pod-restarts |  pod_number_of_container_restarts  |  INSUFFICIENT_DATA |
++--------------------------------------+------------------------------------+--------------------+

@@ -1,0 +1,12 @@
+# Before
+NAME                                 READY   STATUS    RESTARTS   AGE
+streamingapp-auth-5bc74bb87f-g7tjt   1/1     Running   0          3m24s
+streamingapp-auth-5bc74bb87f-l8qtl   1/1     Running   0          3m9s
+
+$ kubectl delete pod streamingapp-auth-5bc74bb87f-g7tjt -n streamingapp
+pod "streamingapp-auth-5bc74bb87f-g7tjt" deleted from streamingapp namespace
+
+# After (Kubernetes scheduled a replacement)
+NAME                                 READY   STATUS    RESTARTS   AGE
+streamingapp-auth-5bc74bb87f-chmvp   1/1     Running   0          32s
+streamingapp-auth-5bc74bb87f-l8qtl   1/1     Running   0          3m43s

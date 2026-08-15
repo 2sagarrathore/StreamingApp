@@ -1,0 +1,4 @@
+$ kubectl get pvc -n streamingapp
+
+NAME                          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+data-streamingapp-mongodb-0   Bound    pvc-27700b1f-7ed7-4839-9f28-e27f7d87e78f   20Gi       RWO            gp3            <unset>                 73s

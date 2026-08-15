@@ -1,0 +1,6 @@
+$ kubectl get hpa -n streamingapp
+
+NAME                     REFERENCE                           TARGETS                               MINPODS   MAXPODS   REPLICAS   AGE
+streamingapp-auth        Deployment/streamingapp-auth        cpu: <unknown>/70%, memory: 34%/80%   2         8         2          72s
+streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory: 4%/80%           2         6         2          72s
+streamingapp-streaming   Deployment/streamingapp-streaming   cpu: <unknown>/65%, memory: 21%/80%   2         10        2          72s

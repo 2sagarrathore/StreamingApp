@@ -1,0 +1,27 @@
+# HPA before load
+NAME                     REFERENCE                           TARGETS                        MINPODS   MAXPODS   REPLICAS   AGE
+streamingapp-auth        Deployment/streamingapp-auth        cpu: 1%/70%, memory: 30%/80%   2         8         2          3m58s
+streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory: 4%/80%    2         6         2          3m58s
+streamingapp-streaming   Deployment/streamingapp-streaming   cpu: 0%/65%, memory: 19%/80%   2         10        2          3m58s
+
+# HPA after 1 minute(s) of load
+NAME                     REFERENCE                           TARGETS                          MINPODS   MAXPODS   REPLICAS   AGE
+streamingapp-auth        Deployment/streamingapp-auth        cpu: 142%/70%, memory: 54%/80%   2         8         2          5m
+streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory: 4%/80%      2         6         2          5m
+streamingapp-streaming   Deployment/streamingapp-streaming   cpu: 0%/65%, memory: 19%/80%     2         10        2          5m
+auth pod count: 4
+
+# HPA after 2 minute(s) of load
+NAME                     REFERENCE                           TARGETS                         MINPODS   MAXPODS   REPLICAS   AGE
+streamingapp-auth        Deployment/streamingapp-auth        cpu: 76%/70%, memory: 54%/80%   2         8         4          6m2s
+streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory: 4%/80%     2         6         2          6m2s
+streamingapp-streaming   Deployment/streamingapp-streaming   cpu: 0%/65%, memory: 19%/80%    2         10        2          6m2s
+auth pod count: 4
+
+# HPA after 3 minute(s) of load
+NAME                     REFERENCE                           TARGETS                         MINPODS   MAXPODS   REPLICAS   AGE
+streamingapp-auth        Deployment/streamingapp-auth        cpu: 67%/70%, memory: 54%/80%   2         8         4          7m3s
+streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory: 4%/80%     2         6         2          7m3s
+streamingapp-streaming   Deployment/streamingapp-streaming   cpu: 0%/65%, memory: 19%/80%    2         10        2          7m3s
+auth pod count: 4
+

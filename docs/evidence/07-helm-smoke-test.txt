@@ -1,0 +1,43 @@
+NAME: streamingapp
+LAST DEPLOYED: Sat Aug 15 17:02:04 2026
+NAMESPACE: streamingapp
+STATUS: deployed
+REVISION: 1
+TEST SUITE:     streamingapp-smoke-test
+Last Started:   Sat Aug 15 17:05:24 2026
+Last Completed: Sat Aug 15 17:05:30 2026
+Phase:          Succeeded
+NOTES:
+streamingapp 1.0.0 deployed as release "streamingapp" in namespace "streamingapp".
+
+  ---------------------------------------------------------------------------
+  1. Watch the rollout
+  ---------------------------------------------------------------------------
+     kubectl get pods -n streamingapp -w
+
+  ---------------------------------------------------------------------------
+  2. Get the public URL (the ALB takes 2-4 minutes to provision)
+  ---------------------------------------------------------------------------
+     kubectl get ingress streamingapp -n streamingapp \
+       -o jsonpath='http://{.status.loadBalancer.ingress[0].hostname}{"\n"}'
+
+  ---------------------------------------------------------------------------
+  3. Verify each component answers its health check
+  ---------------------------------------------------------------------------
+     kubectl exec -n streamingapp deploy/streamingapp-admin -- \
+       wget -qO- http://127.0.0.1:3003/api/health
+     kubectl exec -n streamingapp deploy/streamingapp-auth -- \
+       wget -qO- http://127.0.0.1:3001/health
+     kubectl exec -n streamingapp deploy/streamingapp-chat -- \
+       wget -qO- http://127.0.0.1:3004/api/health
+     kubectl exec -n streamingapp deploy/streamingapp-frontend -- \
+       wget -qO- http://127.0.0.1:8080/healthz
+     kubectl exec -n streamingapp deploy/streamingapp-streaming -- \
+       wget -qO- http://127.0.0.1:3002/api/health
+
+  ---------------------------------------------------------------------------
+  4. Autoscaling status
+  ---------------------------------------------------------------------------
+     kubectl get hpa -n streamingapp
+
+Error: unable to get pod logs for streamingapp-smoke-test: pods "streamingapp-smoke-test" not found

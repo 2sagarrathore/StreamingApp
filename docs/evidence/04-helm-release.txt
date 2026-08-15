@@ -1,0 +1,4 @@
+$ helm list -n streamingapp
+
+NAME        	NAMESPACE   	REVISION	UPDATED                             	STATUS  	CHART             	APP VERSION
+streamingapp	streamingapp	1       	2026-08-15 17:02:04.736464 +0530 IST	deployed	streamingapp-1.0.0	1.0.0      

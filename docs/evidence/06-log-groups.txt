@@ -1,0 +1,12 @@
+$ aws logs describe-log-groups --region ap-south-1 --log-group-name-prefix /aws/containerinsights/streamingapp-eks --query logGroups[].{Group:logGroupName,RetentionDays:retentionInDays} --output table
+
+--------------------------------------------------------------------------
+|                            DescribeLogGroups                           |
++-------------------------------------------------------+----------------+
+|                         Group                         | RetentionDays  |
++-------------------------------------------------------+----------------+
+|  /aws/containerinsights/streamingapp-eks/application  |  30            |
+|  /aws/containerinsights/streamingapp-eks/dataplane    |  30            |
+|  /aws/containerinsights/streamingapp-eks/host         |  30            |
+|  /aws/containerinsights/streamingapp-eks/performance  |  30            |
++-------------------------------------------------------+----------------+

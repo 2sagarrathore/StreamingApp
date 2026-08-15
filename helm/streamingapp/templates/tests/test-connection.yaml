@@ -8,7 +8,12 @@ metadata:
     {{- include "streamingapp.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    # Deliberately NOT hook-succeeded: that deletes the pod the moment it
+    # passes, so `helm test --logs` finds nothing and reports
+    # "pods streamingapp-smoke-test not found" — a passing test that reads as a
+    # failure, and no health-check output to keep. before-hook-creation alone
+    # leaves the pod up for inspection and clears it on the next test run.
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   restartPolicy: Never
   containers:

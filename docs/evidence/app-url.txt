@@ -1,0 +1,1 @@
+http://k8s-streamingapp-ac32464491-1158707937.ap-south-1.elb.amazonaws.com

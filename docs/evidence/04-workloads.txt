@@ -1,0 +1,42 @@
+$ kubectl get all -n streamingapp
+
+NAME                                          READY   STATUS    RESTARTS   AGE
+pod/streamingapp-admin-56595b7c75-vl8h2       1/1     Running   0          69s
+pod/streamingapp-auth-5bc74bb87f-g7tjt        1/1     Running   0          69s
+pod/streamingapp-auth-5bc74bb87f-l8qtl        1/1     Running   0          54s
+pod/streamingapp-chat-777dcc6f6b-m4gm8        1/1     Running   0          69s
+pod/streamingapp-frontend-76dcd48797-sb6s7    1/1     Running   0          54s
+pod/streamingapp-frontend-76dcd48797-xv92g    1/1     Running   0          69s
+pod/streamingapp-mongodb-0                    1/1     Running   0          69s
+pod/streamingapp-streaming-67f856cc87-5srtf   1/1     Running   0          54s
+pod/streamingapp-streaming-67f856cc87-gj7vg   1/1     Running   0          69s
+
+NAME                             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)     AGE
+service/streamingapp-admin       ClusterIP   172.20.149.102   <none>        3003/TCP    69s
+service/streamingapp-auth        ClusterIP   172.20.88.41     <none>        3001/TCP    69s
+service/streamingapp-chat        ClusterIP   172.20.62.204    <none>        3004/TCP    69s
+service/streamingapp-frontend    ClusterIP   172.20.225.33    <none>        80/TCP      69s
+service/streamingapp-mongodb     ClusterIP   None             <none>        27017/TCP   69s
+service/streamingapp-streaming   ClusterIP   172.20.13.43     <none>        3002/TCP    69s
+
+NAME                                     READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/streamingapp-admin       1/1     1            1           70s
+deployment.apps/streamingapp-auth        2/2     2            2           70s
+deployment.apps/streamingapp-chat        1/1     1            1           70s
+deployment.apps/streamingapp-frontend    2/2     2            2           70s
+deployment.apps/streamingapp-streaming   2/2     2            2           70s
+
+NAME                                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/streamingapp-admin-56595b7c75       1         1         1       70s
+replicaset.apps/streamingapp-auth-5bc74bb87f        2         2         2       70s
+replicaset.apps/streamingapp-chat-777dcc6f6b        1         1         1       70s
+replicaset.apps/streamingapp-frontend-76dcd48797    2         2         2       70s
+replicaset.apps/streamingapp-streaming-67f856cc87   2         2         2       70s
+
+NAME                                    READY   AGE
+statefulset.apps/streamingapp-mongodb   1/1     70s
+
+NAME                                                         REFERENCE                           TARGETS                               MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/streamingapp-auth        Deployment/streamingapp-auth        cpu: <unknown>/70%, memory: 34%/80%   2         8         2          70s
+horizontalpodautoscaler.autoscaling/streamingapp-frontend    Deployment/streamingapp-frontend    cpu: 2%/70%, memory: 4%/80%           2         6         2          70s
+horizontalpodautoscaler.autoscaling/streamingapp-streaming   Deployment/streamingapp-streaming   cpu: <unknown>/65%, memory: 21%/80%   2         10        2          70s

@@ -1,0 +1,19 @@
+# Endpoint checks against http://k8s-streamingapp-ac32464491-1158707937.ap-south-1.elb.amazonaws.com
+# 2026-08-15T11:35:21Z
+
+/                                        HTTP 200
+/healthz                                 HTTP 200
+/svc/auth/health                         HTTP 200
+/svc/streaming/api/health                HTTP 200
+/svc/admin/api/health                    HTTP 200
+/svc/chat/api/chat                       HTTP 404
+
+# Response bodies
+--- /healthz
+{"status":"ok","component":"frontend"}
+--- /svc/auth/health
+{"status":"OK"}
+--- /svc/streaming/api/health
+{"msg":"OK"}
+--- /svc/admin/api/health
+{"success":true,"service":"admin","status":"ok"}

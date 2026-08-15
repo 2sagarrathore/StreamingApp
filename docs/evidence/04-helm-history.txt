@@ -1,0 +1,4 @@
+$ helm history streamingapp -n streamingapp
+
+REVISION	UPDATED                 	STATUS  	CHART             	APP VERSION	DESCRIPTION     
+1       	Sat Aug 15 17:02:04 2026	deployed	streamingapp-1.0.0	1.0.0      	Install complete
