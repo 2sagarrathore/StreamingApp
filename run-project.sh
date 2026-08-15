@@ -241,15 +241,15 @@ if [[ -n "${ALB}" ]]; then
       curl -s --max-time 15 "http://${ALB}${path}" || true
       echo
     done
-  } > "${EVIDENCE_DIR}/06-endpoint-checks.txt"
-  ok "captured docs/evidence/06-endpoint-checks.txt"
+  } > "${EVIDENCE_DIR}/07-endpoint-checks.txt"
+  ok "captured docs/evidence/07-endpoint-checks.txt"
 else
   warn "no ALB address after 10 minutes — check: kubectl describe ingress ${HELM_RELEASE} -n ${K8S_NAMESPACE}"
 fi
 
 log "Running the chart's smoke test"
 helm test "${HELM_RELEASE}" -n "${K8S_NAMESPACE}" --logs \
-  > "${EVIDENCE_DIR}/06-helm-smoke-test.txt" 2>&1 \
+  > "${EVIDENCE_DIR}/07-helm-smoke-test.txt" 2>&1 \
   && ok "smoke test passed" || warn "smoke test reported failures — see the log"
 
 # ---- self-healing -----------------------------------------------------------
@@ -268,8 +268,8 @@ log "Self-healing check: deleting an auth pod and watching it come back"
     echo "# After (Kubernetes scheduled a replacement)"
     kubectl get pods -n "${K8S_NAMESPACE}" -l app.kubernetes.io/component=auth
   fi
-} > "${EVIDENCE_DIR}/07-self-healing.txt" 2>&1
-ok "captured docs/evidence/07-self-healing.txt"
+} > "${EVIDENCE_DIR}/08-self-healing.txt" 2>&1
+ok "captured docs/evidence/08-self-healing.txt"
 
 # ---- autoscaling ------------------------------------------------------------
 log "Autoscaling check: driving load at the auth service for 4 minutes"
@@ -277,7 +277,7 @@ log "Autoscaling check: driving load at the auth service for 4 minutes"
   echo "# HPA before load"
   kubectl get hpa -n "${K8S_NAMESPACE}"
   echo
-} > "${EVIDENCE_DIR}/08-hpa-scaling.txt" 2>&1
+} > "${EVIDENCE_DIR}/09-hpa-scaling.txt" 2>&1
 
 kubectl delete pod load-gen -n "${K8S_NAMESPACE}" --ignore-not-found >/dev/null 2>&1
 kubectl run load-gen -n "${K8S_NAMESPACE}" --image=busybox:1.36 --restart=Never -- \
@@ -291,19 +291,19 @@ for i in 1 2 3 4; do
     kubectl get pods -n "${K8S_NAMESPACE}" -l app.kubernetes.io/component=auth --no-headers | wc -l \
       | xargs echo "auth pod count:"
     echo
-  } >> "${EVIDENCE_DIR}/08-hpa-scaling.txt" 2>&1
+  } >> "${EVIDENCE_DIR}/09-hpa-scaling.txt" 2>&1
 done
 
 kubectl delete pod load-gen -n "${K8S_NAMESPACE}" --ignore-not-found >/dev/null 2>&1
 {
   echo "# Load generator stopped. The HPA scales back down after its"
   echo "# 300-second stabilisation window."
-} >> "${EVIDENCE_DIR}/08-hpa-scaling.txt"
-ok "captured docs/evidence/08-hpa-scaling.txt"
+} >> "${EVIDENCE_DIR}/09-hpa-scaling.txt"
+ok "captured docs/evidence/09-hpa-scaling.txt"
 
-capture "09-top-pods"  kubectl top pods -n "${K8S_NAMESPACE}"
-capture "09-top-nodes" kubectl top nodes
-capture "09-events"    kubectl get events -n "${K8S_NAMESPACE}" --sort-by=.lastTimestamp
+capture "10-top-pods"  kubectl top pods -n "${K8S_NAMESPACE}"
+capture "10-top-nodes" kubectl top nodes
+capture "10-events"    kubectl get events -n "${K8S_NAMESPACE}" --sort-by=.lastTimestamp
 
 # ---------------------------------------------------------------------------
 # Validation summary
@@ -332,19 +332,19 @@ SUMMARY="${EVIDENCE_DIR}/validation-summary.md"
   echo "## Endpoint checks"
   echo
   echo '```'
-  cat "${EVIDENCE_DIR}/06-endpoint-checks.txt" 2>/dev/null || echo "(not captured)"
+  cat "${EVIDENCE_DIR}/07-endpoint-checks.txt" 2>/dev/null || echo "(not captured)"
   echo '```'
   echo
   echo "## Autoscaling"
   echo
   echo '```'
-  cat "${EVIDENCE_DIR}/08-hpa-scaling.txt" 2>/dev/null || echo "(not captured)"
+  cat "${EVIDENCE_DIR}/09-hpa-scaling.txt" 2>/dev/null || echo "(not captured)"
   echo '```'
   echo
   echo "## Self-healing"
   echo
   echo '```'
-  cat "${EVIDENCE_DIR}/07-self-healing.txt" 2>/dev/null || echo "(not captured)"
+  cat "${EVIDENCE_DIR}/08-self-healing.txt" 2>/dev/null || echo "(not captured)"
   echo '```'
   echo
   if [[ ${#FAILED_PHASES[@]} -gt 0 ]]; then

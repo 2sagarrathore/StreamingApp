@@ -6,11 +6,11 @@
 #   ./jenkins/run-pipeline.sh
 #   ./jenkins/run-pipeline.sh --no-deploy       # build and scan only
 #
-# The full console log is written to docs/evidence/06-jenkins-build-<n>.log
-# and the outcome is appended to docs/evidence/06-jenkins.txt.
+# The full console log is written to docs/evidence/11-jenkins-build-<n>.log
+# and the outcome is appended to docs/evidence/11-jenkins.txt.
 #
 # Requires jenkins/provision-jenkins.sh to have run first — it writes the
-# controller URL into docs/evidence/06-jenkins.txt and the admin password into
+# controller URL into docs/evidence/11-jenkins.txt and the admin password into
 # .jenkins-admin-password.
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -23,7 +23,7 @@ require_cmd curl jq
 
 JOB_NAME="${JENKINS_JOB:-streamingapp-pipeline}"
 ADMIN_USER="${JENKINS_ADMIN_USER:-admin}"
-EVIDENCE="${REPO_ROOT}/docs/evidence/06-jenkins.txt"
+EVIDENCE="${REPO_ROOT}/docs/evidence/11-jenkins.txt"
 
 JENKINS_URL="${JENKINS_URL:-$(awk '/^url:/ {print $2}' "${EVIDENCE}" 2>/dev/null || true)}"
 [[ -n "${JENKINS_URL}" ]] || die "no Jenkins URL — run ./jenkins/provision-jenkins.sh first"
@@ -71,7 +71,7 @@ done
 [[ -n "${BUILD_NUMBER}" ]] || die "the build never started — check ${JENKINS_URL}/job/${JOB_NAME}/"
 
 BUILD_URL="${JENKINS_URL}/job/${JOB_NAME}/${BUILD_NUMBER}"
-LOG_FILE="${REPO_ROOT}/docs/evidence/06-jenkins-build-${BUILD_NUMBER}.log"
+LOG_FILE="${REPO_ROOT}/docs/evidence/11-jenkins-build-${BUILD_NUMBER}.log"
 ok "build #${BUILD_NUMBER} started"
 
 # ---------------------------------------------------------------------------
@@ -102,13 +102,13 @@ DURATION="$(curl -fsS "${AUTH[@]}" -b "${COOKIE_JAR}" "${BUILD_URL}/api/json" \
 {
   echo
   echo "build #${BUILD_NUMBER}: ${RESULT} in ${DURATION}s"
-  echo "  console: docs/evidence/06-jenkins-build-${BUILD_NUMBER}.log"
+  echo "  console: docs/evidence/11-jenkins-build-${BUILD_NUMBER}.log"
   echo "  url:     ${BUILD_URL}/"
 } >> "${EVIDENCE}"
 
 if [[ "${RESULT}" == "SUCCESS" ]]; then
   ok "build #${BUILD_NUMBER} succeeded in ${DURATION}s"
-  ok "console log saved to docs/evidence/06-jenkins-build-${BUILD_NUMBER}.log"
+  ok "console log saved to docs/evidence/11-jenkins-build-${BUILD_NUMBER}.log"
 else
   warn "build #${BUILD_NUMBER} finished ${RESULT} — see ${LOG_FILE}"
   exit 1

@@ -252,7 +252,7 @@ mkdir -p "${REPO_ROOT}/docs/evidence"
   echo "ingress:     tcp/8080 from ${MY_IP}/32 only"
   echo "iam:         instance profile ${IAM_PROFILE} (no static keys)"
   echo "job:         streamingapp-pipeline (Jenkinsfile from ${REPO_URL})"
-} > "${REPO_ROOT}/docs/evidence/06-jenkins.txt"
+} > "${REPO_ROOT}/docs/evidence/11-jenkins.txt"
 
 if [[ "${READY}" == "true" ]]; then
   ok "Jenkins is up at ${JENKINS_URL}"
