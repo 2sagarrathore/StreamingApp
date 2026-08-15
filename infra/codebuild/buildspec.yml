@@ -1,0 +1,63 @@
+# ---------------------------------------------------------------------------
+# Builds all five container images and pushes them to ECR — inside AWS.
+#
+# Used by infra/scripts/25-build-images-codebuild.sh, which creates the
+# CodeBuild project and feeds it a zip of this repository from S3.
+#
+# Why this exists: the images have to be built somewhere with a Docker daemon.
+# That is normally your laptop or the Jenkins EC2 node, but neither is a
+# requirement — CodeBuild has Docker, sits next to ECR, and costs about
+# $0.02 for a full five-image run. It also builds natively on x86_64, which
+# matches the default t3.medium nodes with no cross-compilation.
+# ---------------------------------------------------------------------------
+version: 0.2
+
+env:
+  variables:
+    DOCKER_BUILDKIT: "1"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Region=$AWS_REGION  Account=$AWS_ACCOUNT_ID  Tag=$IMAGE_TAG"
+      - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+  build:
+    commands:
+      - |
+        set -e
+        build_and_push() {
+          repo="$1"; ctx="$2"; dockerfile="$3"
+          uri="$ECR_REGISTRY/$repo"
+          echo "──────────────────────────────────────────────────────"
+          echo "Building $repo:$IMAGE_TAG"
+          echo "──────────────────────────────────────────────────────"
+          docker build \
+            --file  "$dockerfile" \
+            --tag   "$uri:$IMAGE_TAG" \
+            --tag   "$uri:latest" \
+            --label org.opencontainers.image.revision="$IMAGE_TAG" \
+            --cache-from "$uri:latest" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            "$ctx"
+          docker push "$uri:$IMAGE_TAG"
+          docker push "$uri:latest"
+          echo "pushed $uri:$IMAGE_TAG"
+        }
+
+        build_and_push "$PROJECT/frontend"          "frontend" "frontend/Dockerfile"
+        build_and_push "$PROJECT/auth-service"      "backend"  "backend/authService/Dockerfile"
+        build_and_push "$PROJECT/streaming-service" "backend"  "backend/streamingService/Dockerfile"
+        build_and_push "$PROJECT/admin-service"     "backend"  "backend/adminService/Dockerfile"
+        build_and_push "$PROJECT/chat-service"      "backend"  "backend/chatService/Dockerfile"
+
+  post_build:
+    commands:
+      - echo "All five images pushed with tag $IMAGE_TAG"
+      - |
+        for r in frontend auth-service streaming-service admin-service chat-service; do
+          aws ecr describe-images --repository-name "$PROJECT/$r" --region "$AWS_REGION" \
+            --image-ids imageTag="$IMAGE_TAG" \
+            --query 'imageDetails[0].{Repo:repositoryName,Tag:imageTags[0],MB:imagePushedAt}' \
+            --output text || true
+        done

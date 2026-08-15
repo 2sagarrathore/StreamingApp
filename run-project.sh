@@ -13,6 +13,10 @@
 # phases that have already completed unless you pass --force.
 #
 # Flags:
+#   --codebuild       build the images in AWS CodeBuild instead of locally.
+#                     Applied automatically when no Docker daemon is reachable,
+#                     which is what makes this runnable from AWS CloudShell.
+#   --docker          force local Docker builds
 #   --skip-ecr-push   create the ECR repos but let Jenkins build the images
 #   --skip-monitoring skip the CloudWatch phase
 #   --force           re-run phases that already recorded success
@@ -32,12 +36,17 @@ mkdir -p "${EVIDENCE_DIR}" "${STATE_DIR}"
 SKIP_ECR_PUSH=false
 SKIP_MONITORING=false
 FORCE=false
+# docker    = build locally, needs a Docker daemon
+# codebuild = build inside AWS, needs nothing local
+BUILD_MODE="${BUILD_MODE:-docker}"
 for arg in "$@"; do
   case "${arg}" in
     --skip-ecr-push)   SKIP_ECR_PUSH=true ;;
     --skip-monitoring) SKIP_MONITORING=true ;;
+    --codebuild)       BUILD_MODE=codebuild ;;
+    --docker)          BUILD_MODE=docker ;;
     --force)           FORCE=true ;;
-    -h|--help)         sed -n '2,22p' "$0"; exit 0 ;;
+    -h|--help)         sed -n '2,26p' "$0"; exit 0 ;;
     *) die "unknown flag: ${arg}" ;;
   esac
 done
@@ -114,9 +123,35 @@ require_account || die "AWS credentials are not usable — run 'aws configure' o
 capture "00-aws-identity" aws sts get-caller-identity
 capture "00-aws-version"  aws --version
 
+# The images have to be built somewhere with a Docker daemon. If there isn't
+# one here — CloudShell, a locked-down workstation — fall back to CodeBuild,
+# which has Docker, sits next to ECR, and costs a couple of cents per run.
+if [[ "${BUILD_MODE}" == "docker" ]] && ! docker info >/dev/null 2>&1; then
+  warn "no Docker daemon reachable — switching image builds to AWS CodeBuild"
+  BUILD_MODE=codebuild
+fi
+log "Image build mode: ${BUILD_MODE}"
+
 # ---------------------------------------------------------------------------
-phase "01-ecr" "Create ECR repositories$([[ "${SKIP_ECR_PUSH}" == "false" ]] && echo " and push images")" \
-  bash -c "'${REPO_ROOT}/infra/scripts/20-create-ecr.sh' $([[ "${SKIP_ECR_PUSH}" == "false" ]] && echo '--push')"
+if [[ "${BUILD_MODE}" == "codebuild" ]]; then
+  phase "01-ecr" "Create ECR repositories" "${REPO_ROOT}/infra/scripts/20-create-ecr.sh"
+
+  if [[ "${SKIP_ECR_PUSH}" == "false" ]]; then
+    phase "01b-images" "Build and push the five images with CodeBuild (8-12 minutes)" \
+      "${REPO_ROOT}/infra/scripts/25-build-images-codebuild.sh"
+
+    # 25-build-images-codebuild.sh records the tag it produced so the deploy
+    # phase installs exactly what was just built rather than a stale :latest.
+    if [[ -f "${REPO_ROOT}/.last-image-tag" ]]; then
+      IMAGE_TAG="$(cat "${REPO_ROOT}/.last-image-tag")"
+      export IMAGE_TAG
+      ok "deploying image tag ${IMAGE_TAG}"
+    fi
+  fi
+else
+  phase "01-ecr" "Create ECR repositories$([[ "${SKIP_ECR_PUSH}" == "false" ]] && echo " and push images")" \
+    bash -c "'${REPO_ROOT}/infra/scripts/20-create-ecr.sh' $([[ "${SKIP_ECR_PUSH}" == "false" ]] && echo '--push')"
+fi
 
 capture "01-ecr-repositories" aws ecr describe-repositories --region "${AWS_REGION}" \
   --query 'repositories[].{Repository:repositoryName,URI:repositoryUri,Scan:imageScanningConfiguration.scanOnPush}' --output table
