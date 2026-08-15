@@ -87,11 +87,12 @@ ingress:
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
     alb.ingress.kubernetes.io/healthy-threshold-count: "2"
     alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
-    # 1h idle timeout so Socket.IO connections are not cut mid-watch-party
-    alb.ingress.kubernetes.io/load-balancer-attributes: >-
-      idle_timeout.timeout_seconds=3600,
-      routing.http2.enabled=true,
-      access_logs.s3.enabled=false
+    # 1h idle timeout so Socket.IO connections are not cut mid-watch-party.
+    # Must stay on one line with no spaces after the commas: the controller
+    # splits this string on "," and passes each half verbatim to the ELB API,
+    # so " routing.http2.enabled" (with the leading space a folded scalar
+    # introduces) is rejected as an unknown attribute and no ALB is created.
+    alb.ingress.kubernetes.io/load-balancer-attributes: "idle_timeout.timeout_seconds=3600,routing.http2.enabled=true,access_logs.s3.enabled=false"
     alb.ingress.kubernetes.io/tags: Project=streamingapp,Environment=prod
 
 podDisruptionBudget:
