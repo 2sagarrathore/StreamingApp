@@ -39,3 +39,6 @@ trivy-*.txt
 # just records which build the last run deployed.
 .jenkins-admin-password
 .last-image-tag
+
+# Phase checkpoints are local run state, not evidence.
+docs/evidence/.state/
