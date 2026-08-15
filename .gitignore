@@ -33,3 +33,9 @@ trivy-*.txt
 .idea/
 .vscode/
 *.swp
+
+# Generated at deploy time — never commit these.
+# .jenkins-admin-password is the controller's admin credential; .last-image-tag
+# just records which build the last run deployed.
+.jenkins-admin-password
+.last-image-tag

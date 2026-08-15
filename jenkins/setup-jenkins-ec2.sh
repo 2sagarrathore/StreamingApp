@@ -87,7 +87,7 @@ if ! command -v aws >/dev/null 2>&1; then
 fi
 
 if ! command -v kubectl >/dev/null 2>&1; then
-  curl -fsSLo /tmp/kubectl "https://dl.k8s.io/release/v1.32.0/bin/linux/${K_ARCH}/kubectl"
+  curl -fsSLo /tmp/kubectl "https://dl.k8s.io/release/v1.30.0/bin/linux/${K_ARCH}/kubectl"
   install -m 0755 /tmp/kubectl /usr/local/bin/kubectl
 fi
 
@@ -130,7 +130,12 @@ systemctl restart docker
 systemctl restart jenkins
 sleep 20
 
-PUBLIC_IP="$(curl -fsS --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo '<ec2-public-ip>')"
+# Amazon Linux 2023 requires IMDSv2, so the metadata call needs a session token
+# first — an unauthenticated GET returns 401 and would leave the URL blank.
+IMDS_TOKEN="$(curl -fsS --max-time 5 -X PUT http://169.254.169.254/latest/api/token \
+  -H 'X-aws-ec2-metadata-token-ttl-seconds: 300' 2>/dev/null || true)"
+PUBLIC_IP="$(curl -fsS --max-time 5 -H "X-aws-ec2-metadata-token: ${IMDS_TOKEN}" \
+  http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo '<ec2-public-ip>')"
 
 cat <<EOF
 

@@ -1,0 +1,91 @@
+# ---------------------------------------------------------------------------
+# Jenkins Configuration as Code.
+#
+# Rendered by jenkins/provision-jenkins.sh, which substitutes the __TOKENS__
+# below and drops the result at /var/lib/jenkins/casc.yaml. Jenkins reads it on
+# boot (CASC_JENKINS_CONFIG), so the controller comes up with its security
+# realm, credentials and pipeline job already in place — no setup wizard, no
+# clicking through the UI to create the job.
+#
+# Everything here is declarative and re-applied on every restart, so the
+# controller's configuration lives in git rather than in its $JENKINS_HOME.
+# ---------------------------------------------------------------------------
+jenkins:
+  systemMessage: >-
+    StreamFlix CI/CD — provisioned by jenkins/provision-jenkins.sh.
+    Configuration is managed by JCasC; edit jenkins/casc.yaml, not the UI.
+
+  # The controller builds on itself. That is acceptable for a single-purpose
+  # CI node like this one; a shared Jenkins would use agents instead.
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 2
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "__ADMIN_USER__"
+          password: "__ADMIN_PASSWORD__"
+
+  # Logged-in users can do anything; anonymous users get nothing. The security
+  # group only admits the provisioning IP, so this is not internet-exposed.
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+
+security:
+  # The pipeline is trusted repo content, so script approval would only add a
+  # manual gate; the sandbox stays on for anything that is not the Jenkinsfile.
+  globalJobDslSecurityConfiguration:
+    useScriptSecurity: false
+
+unclassified:
+  location:
+    url: "http://__PUBLIC_IP__:8080/"
+    adminAddress: "__ADMIN_EMAIL__"
+
+  timestamper:
+    allPipelines: true
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          # The Jenkinsfile reads this with credentials('aws-account-id') to
+          # build the ECR registry host and the SNS topic ARN. AWS permissions
+          # themselves come from the EC2 instance profile, so there are no
+          # access keys stored anywhere in Jenkins.
+          - string:
+              scope: GLOBAL
+              id: "aws-account-id"
+              secret: "__AWS_ACCOUNT_ID__"
+              description: "12-digit AWS account ID used to build the ECR registry host"
+
+jobs:
+  - script: >
+      pipelineJob('streamingapp-pipeline') {
+        description('Builds, scans and deploys the StreamFlix microservices to EKS. Defined by the Jenkinsfile at the repository root.')
+        parameters {
+          choiceParam('ENVIRONMENT', ['prod', 'staging'], 'Target environment')
+          booleanParam('DEPLOY', true, 'Deploy to EKS after a successful build')
+          booleanParam('RUN_SCAN', true, 'Run a Trivy vulnerability scan on the built images')
+          stringParam('FORCE_TAG', '', 'Deploy this existing tag instead of building a new one')
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('__REPO_URL__') }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(false)
+          }
+        }
+      }
