@@ -86,8 +86,15 @@ if [[ "${DO_PUSH}" == "true" ]]; then
   build_and_push() {
     local repo="$1" ctx="$2" dockerfile="$3"
     local uri="${ECR_REGISTRY}/${repo}"
-    log "Building ${repo}:${TAG}"
-    docker build -f "${REPO_ROOT}/${dockerfile}" -t "${uri}:${TAG}" -t "${uri}:latest" "${REPO_ROOT}/${ctx}"
+    log "Building ${repo}:${TAG} for ${DOCKER_PLATFORM}"
+    # --platform is explicit so an Apple Silicon build cannot silently produce
+    # arm64 images destined for x86_64 nodes (or the reverse).
+    docker buildx build \
+      --platform "${DOCKER_PLATFORM}" \
+      --load \
+      -f "${REPO_ROOT}/${dockerfile}" \
+      -t "${uri}:${TAG}" -t "${uri}:latest" \
+      "${REPO_ROOT}/${ctx}"
     docker push "${uri}:${TAG}"
     docker push "${uri}:latest"
     ok "pushed ${uri}:${TAG}"

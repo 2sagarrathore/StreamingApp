@@ -73,6 +73,26 @@ types there — not in the individual scripts.
 export AWS_REGION=us-east-1
 ```
 
+### Building on Apple Silicon
+
+Container images must match the CPU architecture of the worker nodes. An
+`arm64` image on an `x86_64` node fails with `exec format error`, which
+surfaces as a crash loop with no useful message in the logs — one of the more
+annoying ways to lose an afternoon.
+
+If you build on an Apple Silicon Mac, run everything as `arm64` and skip
+cross-compilation entirely:
+
+```bash
+export NODE_ARCH=arm64      # nodes become t4g.medium, builds target linux/arm64
+```
+
+On an Intel machine, an EC2 builder or Jenkins, leave it alone — the default is
+`x86_64` / `t3.medium` / `linux/amd64`.
+
+`t4g` instances are Graviton-based and run roughly 10% cheaper than the `t3`
+equivalents, so `arm64` is a small win regardless of where you build.
+
 ---
 
 ## Step 4 — Create the ECR repositories

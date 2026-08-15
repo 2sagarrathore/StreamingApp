@@ -17,7 +17,22 @@ export CLUSTER_NAME="${CLUSTER_NAME:-${PROJECT}-eks}"
 export K8S_VERSION="${K8S_VERSION:-1.30}"
 export K8S_NAMESPACE="${K8S_NAMESPACE:-${PROJECT}}"
 export NODEGROUP_NAME="${NODEGROUP_NAME:-${PROJECT}-ng}"
-export NODE_INSTANCE_TYPE="${NODE_INSTANCE_TYPE:-t3.medium}"
+# CPU architecture of the worker nodes. This MUST match the architecture the
+# container images were built for, or pods fail with "exec format error" —
+# which surfaces as a crash loop with no useful message.
+#
+#   x86_64  -> t3.medium   (build with --platform linux/amd64)
+#   arm64   -> t4g.medium  (native on an Apple Silicon Mac, ~10% cheaper)
+#
+# Building on Apple Silicon? Use arm64 and skip cross-compilation entirely.
+export NODE_ARCH="${NODE_ARCH:-x86_64}"
+if [[ "${NODE_ARCH}" == "arm64" ]]; then
+  export NODE_INSTANCE_TYPE="${NODE_INSTANCE_TYPE:-t4g.medium}"
+  export DOCKER_PLATFORM="${DOCKER_PLATFORM:-linux/arm64}"
+else
+  export NODE_INSTANCE_TYPE="${NODE_INSTANCE_TYPE:-t3.medium}"
+  export DOCKER_PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
+fi
 export NODE_MIN="${NODE_MIN:-2}"
 export NODE_MAX="${NODE_MAX:-5}"
 export NODE_DESIRED="${NODE_DESIRED:-3}"
