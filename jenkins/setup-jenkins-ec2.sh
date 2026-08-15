@@ -87,7 +87,7 @@ if ! command -v aws >/dev/null 2>&1; then
 fi
 
 if ! command -v kubectl >/dev/null 2>&1; then
-  curl -fsSLo /tmp/kubectl "https://dl.k8s.io/release/v1.30.0/bin/linux/${K_ARCH}/kubectl"
+  curl -fsSLo /tmp/kubectl "https://dl.k8s.io/release/v1.32.0/bin/linux/${K_ARCH}/kubectl"
   install -m 0755 /tmp/kubectl /usr/local/bin/kubectl
 fi
 

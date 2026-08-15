@@ -14,7 +14,11 @@ export ENVIRONMENT="${ENVIRONMENT:-prod}"
 
 # ---- EKS -------------------------------------------------------------------
 export CLUSTER_NAME="${CLUSTER_NAME:-${PROJECT}-eks}"
-export K8S_VERSION="${K8S_VERSION:-1.30}"
+# EKS drops old minor versions on a rolling schedule; 1.30 left standard
+# support and eksctl now rejects it outright. Check the supported list with
+#   aws eks describe-cluster-versions --query 'clusterVersions[].clusterVersion'
+# before pinning a new one.
+export K8S_VERSION="${K8S_VERSION:-1.32}"
 export K8S_NAMESPACE="${K8S_NAMESPACE:-${PROJECT}}"
 export NODEGROUP_NAME="${NODEGROUP_NAME:-${PROJECT}-ng}"
 # CPU architecture of the worker nodes. This MUST match the architecture the

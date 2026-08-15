@@ -76,10 +76,13 @@ blue "Installing kubectl, eksctl and helm into ~/.local/bin"
 mkdir -p "${HOME}/.local/bin"
 export PATH="${HOME}/.local/bin:${PATH}"
 
-if ! command -v kubectl >/dev/null; then
-  curl -fsSLo "${HOME}/.local/bin/kubectl" \
-    "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl" && chmod +x "${HOME}/.local/bin/kubectl"
-fi
+# Always (re)fetch kubectl rather than keeping whatever a previous run left
+# behind: kubectl only supports one minor version of skew from the API server,
+# and a stale binary from an older cluster version fails in confusing ways.
+KUBECTL_VERSION="${KUBECTL_VERSION:-v1.32.0}"
+curl -fsSLo "${HOME}/.local/bin/kubectl" \
+  "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
+  && chmod +x "${HOME}/.local/bin/kubectl"
 green "kubectl $(kubectl version --client -o json 2>/dev/null | jq -r .clientVersion.gitVersion 2>/dev/null || echo ready)"
 
 if ! command -v eksctl >/dev/null; then
